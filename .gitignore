@@ -1,0 +1,7 @@
+__pycache__
+skygrid.egg-info
+setup.*
+.pypirc
+MANIFEST
+dist/
+*.pyc
