@@ -1,4 +1,4 @@
-from skygrid import API_BASE
+from skygrid import API_BASE, DEFAULT_API
 
 from .api import Api
 from .device import Device
@@ -8,11 +8,11 @@ from .user import User
 
 class Project(object):
 
-  def __init__(self, project_id=None, address=None, api=None, master_key=None):
+  def __init__(self, project_id, address=None, api=None, master_key=None):
     self._api = Api()
 
     if api == None:
-      api = 'websocket'
+      api = DEFAULT_API
 
     if address == None:
       address = API_BASE
@@ -74,11 +74,17 @@ class Project(object):
     return users
 
 
-  def add_schema(self, data):
-    schema = self._api.request('addDeviceSchema', data)
-    schema = self.schema(schema['id']).fetch()
+  def add_schema(self, name):
+    data = self._api.request('addDeviceSchema', {'name': name})
 
-    return schema
+    if 'id' in data:
+      data = self.schema(schema['id']).fetch()
+    
+    elif type(data) is str:
+      raise Exception(data)
+    
+    else:
+      raise Exception('Unable to create new schema')
 
 
   def schema(self, schema_id):
@@ -94,17 +100,17 @@ class Project(object):
     return schemas
 
 
-  def add_device(self, data):
-    if type(data['schema']) is dict:
-      data['schemaId'] = data['schema']['id']
+  def add_device(self, name, schema=None, schema_id=None):
+    if schema_id is not None:
+      device = self._api.request('addDevice', {'name': name, 'schemaId': schema_id})
+      return self.device(device['id']).fetch()
+
+    elif schema is not None:
+      device = self._api.request('addDevice', {'name': name, 'schemaId': schema.id()})
+      return self.device(device['id']).fetch()
+
     else:
-      data['schemaId'] = data['schema']
-
-    data.pop('schema', None)
-
-    device = self._api.request('addDevice', data)
-
-    return self.device(device['id']).fetch()
+      raise Exception('No schema provided')
 
 
   def device(self, device_id):
@@ -119,22 +125,6 @@ class Project(object):
 
     return devices
 
-  #   /**
-  #  * Finds devices that adhere to the specified constraints.
-  #  * @param  {object}  [constraints] The constraints to apply to the search.
-  #  * @param  {Boolean} [fetch]  Determines whether the full device object should be fetched, or just the description.  Defaults to true.
-  #  * @returns {Promise<Device, SkyGridException>} A promise that resolves to an array of all devices that were found.
-  #  */
-  # devices(constraints, fetch = true) {
-  #   return this._api.request('findDevices', { 
-  #     constraints: constraints,
-  #     fetch: fetch
-  #   }).then(devices => {
-  #     return devices.map(item => {
-  #       return this.device(item);
-  #     });
-  #   });
-  # }
 
   # subscribe(settings, callback) {
   #   this._subscriptionManager.addSubscription(settings, callback);

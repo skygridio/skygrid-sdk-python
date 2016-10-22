@@ -92,28 +92,17 @@ class Device(object):
   def schema(self):
     return Schema(self._api, self.schemaId)
 
-  # /**
-  #  * Gets a Map of properties and their values.  self map is a copy of the internal
-  #  * state, and as a result changes will not be reflected on the Device object.
-  #  * @returns {Map<string,any>} A map of properties and their values
-  #  *
-  #  * @example
-  #  * for (let [key, value] of device.properties) {
-  #  *     console.log(key + " = " + value);
-  #  * }
-  #  */
-  # get properties() {
-  #   const ret = new Map();
-  #   for (let key in self._data.properties) {
-  #     ret.set(key, self._data.properties[key]);
-  #   }
 
-  #   for (let key in self._changes.properties) {
-  #     ret.set(key, self._changes.properties[key]);
-  #   }
+  def properties(self):
+    properties = {}
 
-  #   return ret;
-  # }
+    for key in self._data['properties']:
+      properties[key] = self._data['properties'][key]
+
+    for key in self._changes['properties']:
+      properties[key] = self._changes['properties'][key]
+        
+    return properties
 
 
   def set(self, name, value):
@@ -125,7 +114,7 @@ class Device(object):
     if name in self._changes['properties']:
       return self._changes['properties'][name]
     
-    if name in self._data:
+    if name in self._data['properties']:
       return self._data['properties'][name]
     
     raise Exception('Property does not exist')
@@ -142,15 +131,15 @@ class Device(object):
         self._changed = True
 
     if self._changed:
-      changes = prepare_changes(self._changes, {'deviceId', self.id})
+      changes = prepare_changes(self._changes, {'deviceId': self.id()})
 
       device = self._api.request('updateDevice', changes)
 
-      util.merge_fields(self._data, self._changes, ['name', 'log', 'properties'])
+      merge_fields(self._data, self._changes, ['name', 'log', 'properties'])
       #util.merge_acl(self._data, self._changes)
 
-      self._changes = { properties: {} }
-      self._changed = false
+      self._changes = { 'properties': {} }
+      self._changed = False
       
     return self
 
@@ -158,11 +147,15 @@ class Device(object):
   def fetch(self):
     data = self._api.request('fetchDevice', {'deviceId': self._data['id']})
 
-    fix_data_dates(data)
-    self._data = data
-    self._fetched = True
+    if 'id' in data:
+      fix_data_dates(data)
+      self._data = data
+      self._fetched = True
 
-    return self
+      return self
+
+    else:
+      raise Exception(data)
 
 
   def fetch_if_needed(self):

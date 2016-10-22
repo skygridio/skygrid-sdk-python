@@ -14,10 +14,10 @@ def object_empty(obj):
 
 
 def merge_fields(target, source, fields):
-  for index, field in enumerate(fields):
-    source_field = source[field]
-
+  for field in fields:
     if field in source:
+      source_field = source[field]
+
       if not type(source_field) == dict:
         target[field] = source_field
       else:

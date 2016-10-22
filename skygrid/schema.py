@@ -89,28 +89,37 @@ class Schema(object):
     return self._changed
 
 
-  # def properties(self):
-  #   const names = Object.keys(self._data.properties);
-  #   for (let key in self._changes.properties) {
-  #     names[key] = self._changes.properties[key];
-  #   }
+  def properties(self):
+    properties = []
 
-  #   return names;
-  # }
+    for key in self._data['properties']:
+      if key not in properties:
+        properties.append(key)
 
-  def add_property(self, name, schema, default):
-    self._changes['properties']['name'] = {
-      'schema': schema,
+    for key in self._changes['properties']:
+      # if the property has been marked for removal
+      if self._changes['properties'][key] is None:
+        properties.remove(key)
+
+      elif key not in properties:
+        properties.append(key)
+        
+    return properties
+
+
+  def add_property(self, name, ttype, default):
+    self._changes['properties'][name] = {
+      'type': ttype,
       'default': default
     }
     
     self._changed = True
 
 
-  def update_property(self, name, schema, default):
-    if name in self._data:
-      self._changes['name'] = {
-        'schema': schema,
+  def update_property(self, name, ttype, default):
+    if name in self._data['properties'] or name in self._changes['properties']:
+      self._changes['properties'][name] = {
+        'type': ttype,
         'default': default
       }
 
@@ -124,15 +133,14 @@ class Schema(object):
     if name in self._changes['properties']:
       return self._changes['properties'][name]
 
-    if name in self._data['properties'][name]:
+    if name in self._data['properties']:
       return self._data['properties'][name]
     
-    # TODO: Log warning
-    return None
+    raise Exception('Property does not exist')
 
 
   def remove_property(self, name):
-    self._changes.pop(name, None)
+    self._changes['properties'][name] = None
     self._changed = True
   
 
@@ -141,9 +149,12 @@ class Schema(object):
       raise Exception('Can only edit users when using the master key')
 
     if self._changed:
-      changes = prepare_changes(self._changes, {'schemaId': self.id})
+      changes = prepare_changes(self._changes, {'schemaId': self.id()})
 
       schema = self._api.request('updateDeviceSchema', changes)
+
+      if type(schema) is str:
+        raise Exception(schema)
 
       merge_fields(self._data, self._changes, ['name', 'description', 'properties'])
       #merge_acl(self._data, self._changes)
@@ -155,7 +166,7 @@ class Schema(object):
 
   
   def fetch(self):
-    data = self._api.request('fetchDeviceSchema', {'schemaId': self.id})
+    data = self._api.request('fetchDeviceSchema', {'schemaId': self.id()})
 
     self._data = data
     self._fetched = True
@@ -176,3 +187,4 @@ class Schema(object):
 
   def discard_changes(self):
     self._changes = { 'properties': {} }
+    self._changed = False

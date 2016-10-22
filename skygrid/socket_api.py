@@ -71,6 +71,8 @@ class SocketApi(object):
 
     if not data == None:
       request['data'] = data
+    else:
+      request['data'] = {}
     
     self._request_result = None
 
