@@ -1,55 +1,73 @@
 from socketIO_client import SocketIO, BaseNamespace
-
+from time import sleep
+import threading
 
 class SocketApi(object):
   class Namespace(BaseNamespace):
     def set_api(self, api):
       self._api = api
 
+
     def on_connect(self):
-      #print('[Connected]')
       self._api._session = False
       self._api.connected = True
-      #self._emitter.emit('connect')
-
-
-    def on_update(self, *args):
-      #self._emitter.emit('update', args)
-      pass
+      self._api._emitter.emit('connect')
 
 
     def on_disconnect(self):
-      #print('[Disconnected]')
       self._api._session = False
       self._api.connected = False
-      #self._emitter.emit('disconnect')
+      self._api._emitter.emit('disconnect')
 
 
-  def __init__(self, address, emitter):
-    self._address = address
-    #self._emitter = emitter
-    self._session = False
-    self.connected = False
-    self._socket = None
+  def on_update(self, *args):
+    self._emitter.emit('update', args[0])
 
 
   def setup_namespace(self, io, path):
-    #print('new_wsapi:', msg)
     namespace = self.Namespace(io, path)
     namespace.set_api(self)
     return namespace
 
 
-  def setup(self, project_id, master_key=None):
-    self._project_id = project_id;
-    self._master_key = master_key;
-    
+  def __init__(self, address=None, project_id=None, emitter=None):
+    self._address       = address
+    self._project_id    = project_id
+    self._master_key    = None
+    self._session       = False
+    self.connected      = False
+    self._socket        = None
+    self._socket_thread = None
+    self._request       = None
+
+    self._emitter       = emitter
+
     if self._socket == None:
       self._socket = SocketIO(self._address, Namespace=self.setup_namespace)
 
+      self._socket.on('update', self.on_update)
+
+      self._socket_thread = threading.Thread(target=self._manage_socket)
+      self._socket_thread.daemon = True
+      self._socket_thread.start()
+
+
+  def _manage_socket(self):
+    # this is a bit average, but the scoketIO_client library
+    # requires blocking (for wait()) to receive updates for subscriptions
+    while True:
+      if not self._request:
+        self._socket.wait(seconds=0.2)
+
+      else:
+        self._socket.emit('message', self._request, self.return_result)
+        self._socket.wait_for_callbacks()
+
+        self._request = None
+
 
   def close(self):
-    self._socket.close()
+    self._socket_thread = None
     self._socket = None
 
 
@@ -73,34 +91,31 @@ class SocketApi(object):
       request['data'] = data
     else:
       request['data'] = {}
-    
+
+    self._request_result = None
+    self._request = request
+
+    # TODO allow for timeout
+    while self._request_result is None:
+      sleep(0.2)
+
+    result = self._request_result
     self._request_result = None
 
-    self._socket.emit('message', request, self.return_result)
-    self._socket.wait(seconds=2)
-
-    return self._request_result
+    return result
 
 
   def return_result(self, *args):
     result = args[0]
 
-    if result['status'] == 'ok':
+    if 'status' in result and result['status'] == 'ok':
       if 'data' in result:
         self._request_result = result['data']
+      else:
+        self._request_result = True
+
+    elif 'status' in result and result['status'] != 'ok':
+      raise Exception(result['data'])
 
     else:
-      #TODO throw error
-      self._request_result = result['data']
-      
-#    return new Promise((resolve, reject) => {
-#      self.socket.emit('message', request, response => {
-#        if (response.status === 'ok') {
-#          resolve(response.data);
-#        } else if (typeof response.data === 'string') {
-#          throw new SkyGridException(response.data);
-#        } else {
-#          throw new ValidationException(response.data);
-#        }
-#      });
-#    });
+      raise Exception('Unexpected response from server')

@@ -1,5 +1,7 @@
-#from .acl import Acl
+from .acl import Acl
 from .util import *
+
+from datetime import datetime
 
 class Device(object):
   
@@ -7,7 +9,7 @@ class Device(object):
     if data == None:
       raise Exception('No device data/ID supplied')
 
-    self._api = api.api
+    self._api = api
     #self._subscriptionManager = api.subscriptionManager;
 
     self._changes = { 'properties': {} }
@@ -44,25 +46,25 @@ class Device(object):
     self._changed = True
 
 
-  # def acl(self):
-  #   if 'acl' not in self._changes:
-  #     if 'acl' in self._data:
-  #       self._changes.acl = Acl(self._data.acl)
-  #     else:
-  #       self._changes.acl = Acl()
+  def acl(self):
+    if 'acl' not in self._changes:
+      if 'acl' in self._data:
+        self._changes['acl'] = Acl(self._data['acl'])
+      else:
+        self._changes['acl'] = Acl()
 
-  #     self._changed = True
+      self._changed = True
 
-  #   return self._changes.acl
+    return self._changes['acl']
 
 
-  # def set_acl(self, value=None):
-  #   if not value == None: # && typeof value === 'object') {
-  #     if not value is Acl:
-  #       value = Acl(value)
+  def set_acl(self, value=None):
+    if value is not None:
+      if not value is Acl:
+        value = Acl(value)
 
-  #   self._changes.acl = value
-  #   self._changed = true
+    self._changes.acl = value
+    self._changed = true
 
 
   def log(self):
@@ -136,7 +138,7 @@ class Device(object):
       device = self._api.request('updateDevice', changes)
 
       merge_fields(self._data, self._changes, ['name', 'log', 'properties'])
-      #util.merge_acl(self._data, self._changes)
+      merge_acl(self._data, self._changes)
 
       self._changes = { 'properties': {} }
       self._changed = False
@@ -166,46 +168,40 @@ class Device(object):
 
 
   def history(self, start=None, end=None, limit=None):
-    data = { 'deviceId': self.id }
+    data = { 'deviceId': self.id() }
     constraints = {}
 
     if not start == None:
-      if start is str:
-        #TODO start = new Date(start)
-        pass
-
-      #if start is Date:
-      #  constraints.time = { '$gte': start }
+      if type(start) is datetime:
+        constraints['time'] = { '$gte': date_to_string(start) }
       
-      #else if start == 'object') {
-      #  constraints = start;
-      #}
+      else:
+        raise Exception('Invalid start date')
     
 
     if not end == None:
-      pass
-      # if end is str:
-      #   #end = new Date(end);
-      
-      # if (end instanceof Date) {
-      #   if (!constraints.time) {
-      #     constraints.time = {};
-      #   }
+      if type(end) is datetime:
+        if 'time' not in constraints:
+          constraints['time'] = { '$lt': date_to_string(end) }
+        else:
+          constraints['time']['$lt'] = date_to_string(end)
 
-      #   constraints.time.$lt = end;
-      # }
+      else:
+        raise Exception('Invalid end date')
+
 
     data['constraints'] = constraints
 
-    if limit is int:
+
+    if type(limit) is int:
       data['limit'] = limit
+
 
     history = []
 
     points = self._api.request('fetchHistory', data)
 
     for point in points:
-      #point['time'] = new Date('time')
       history.append(point)
 
     return history

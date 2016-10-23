@@ -50,8 +50,10 @@ def prepare_changes(changes, ret):
 def fix_data_dates(data):
   if 'createdAt' in data:
     data['createdAt'] = datetime.strptime(data['createdAt'], ISO8601_format)
-    #data['createdAt'] = new Date(data['createdAt'])
 
   if 'updatedAt' in data:
     data['updatedAt'] = datetime.strptime(data['updatedAt'], ISO8601_format)
-    #data['updatedAt'] = new Date(data['updatedAt'])
+
+
+def date_to_string(date):
+  return date.strftime(ISO8601_format)

@@ -1,15 +1,21 @@
 from skygrid import API_BASE, DEFAULT_API
 
-from .api import Api
+from .socket_api import SocketApi
 from .device import Device
 from .schema import Schema
+from .subscription_manager import SubscriptionManager
 from .user import User
+
+from pyee import EventEmitter
 
 
 class Project(object):
 
+  _emitter = EventEmitter()
+  _self = None
+
   def __init__(self, project_id, address=None, api=None, master_key=None):
-    self._api = Api()
+    _self = self
 
     if api == None:
       api = DEFAULT_API
@@ -17,11 +23,21 @@ class Project(object):
     if address == None:
       address = API_BASE
 
+    if api is 'websocket':
+      self._api = SocketApi(address, project_id, self._emitter)
+
+    elif address is 'rest':
+      raise Exception('Rest api not supported')
+
+    else:
+      raise Exception('Unknown api type')
+
     self._project_id = project_id
     self._master_key = master_key
-    #self._subscriptions = {};
+    self._subscriptions = {}
+    self._subscription_manager = SubscriptionManager(self._api)
 
-    self._api.setup(address, api, project_id, master_key)
+    self._setup_listeners()
 
 
   def login(self, email, password):
@@ -40,7 +56,7 @@ class Project(object):
     
   
   def login_master(self, master_key):
-    pass
+    return self._api.request('loginMaster', { 'masterKey': master_key})
 
 
   def logout(self):
@@ -65,7 +81,7 @@ class Project(object):
     return User(self._api, user_id)
 
 
-  def users(self, constraints={}, fetch = True):
+  def users(self, constraints={}, fetch=True):
     users = self._api.request('findUsers', {'constraints': constraints, 'fetch': fetch})
 
     for index, user in enumerate(users):
@@ -91,7 +107,7 @@ class Project(object):
     return Schema(self._api, schema_id)
   
 
-  def schemas(self, constraints={}, fetch = True):
+  def schemas(self, constraints={}, fetch=True):
     schemas = self._api.request('findDeviceSchemas', {'constraints': constraints, 'fetch': fetch})
 
     for index, schema in enumerate(schemas):
@@ -126,20 +142,40 @@ class Project(object):
     return devices
 
 
-  # subscribe(settings, callback) {
-  #   this._subscriptionManager.addSubscription(settings, callback);
-  # }
+  def subscribe(self, settings={}, callback=None):
+    if callback is None:
+      raise Exception('No callback function provided')
 
-  # removeSubscriptions() {
-  #   return this._subscriptionManager.removeSubscriptions();
-  # }
+    self._subscription_manager.add_subscription(settings, callback)
 
-  # close() {
-  #   return this.removeSubscriptions().then(() => {
-  #     return this._api.close();
-  #   }).then(() => {
-  #     this._projectId = null;
-  #     this._masterKey = null;
-  #     this._user = null;
-  #   });
-  # }
+
+  def remove_subscriptions(self):
+    return self._subscription_manager.remove_subscriptions()
+
+
+  def close(self):
+    self.remove_subscriptions()
+    self._api.close()
+    
+    self._projectId = None
+    self._masterKey = None
+    self._user = None
+
+
+  def _setup_listeners(self):
+    self._emitter.on('connect',    self._event_connect)
+    self._emitter.on('update',     self._event_update)
+    self._emitter.on('disconnect', self._event_disconnect)
+
+
+  def _event_connect(self):
+    self._subscription_manager.request_subscriptions()
+
+
+  def _event_update(self, message):
+    device = self.device(message['device'])
+    self._subscription_manager.run(message['id'], message['changes'], device)
+
+
+  def _event_disconnect(self):
+    self._subscription_manager.invalidate_subscriptions()
