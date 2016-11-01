@@ -25,10 +25,10 @@ The Device object allows us to fetch the current state of the device from the Sk
 ```python
 import skygrid
 
-// Get a Project object that lets us interact with a SkyGrid project.
+# Get a Project object that lets us interact with a SkyGrid project.
 project = skygrid.project('PROJECT_ID')
 
-// Gets a Device object that lets us interact with a device.
+# Gets a Device object that lets us interact with a device.
 device = project.device('DEVICE_ID')
 ```
 
