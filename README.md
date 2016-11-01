@@ -26,7 +26,7 @@ The Device object allows us to fetch the current state of the device from the Sk
 import skygrid
 
 # Get a Project object that lets us interact with a SkyGrid project.
-project = skygrid.project('PROJECT_ID')
+project = skygrid.Project('PROJECT_ID')
 
 # Gets a Device object that lets us interact with a device.
 device = project.device('DEVICE_ID')
@@ -52,8 +52,8 @@ device.save()
 You can also directly set properties in the save method:
 ```python
 device.save({
-  speed: 100,
-  distance: 10
+  'speed': 100,
+  'distance': 10
 })
 ```
 
