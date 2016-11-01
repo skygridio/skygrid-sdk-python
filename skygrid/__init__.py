@@ -1,4 +1,4 @@
-API_BASE = 'https://api.skygrid.io/'
+API_BASE = 'https://api.skygrid.io'
 DEFAULT_API = 'websocket'
 #API_BASE = 'localhost'
 
