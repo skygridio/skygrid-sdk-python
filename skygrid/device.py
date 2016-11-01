@@ -4,7 +4,10 @@ from .util import *
 from datetime import datetime
 
 class Device(object):
-  
+  """
+  Represents a device in the SkyGrid system.
+  """
+
   def __init__(self, api, data=None):
     if data == None:
       raise Exception('No device data/ID supplied')
@@ -211,8 +214,9 @@ class Device(object):
     return self._api.request('deleteDevice', { 'deviceId': self._data['id'] })
 
 
-  # def subscribe(callback):
-  #   self._subscriptionManager.addSubscription({'deviceId': self.id}, 
+  def subscribe(callback):
+    self._subscription_manager.add_subscription({'deviceId': self.id()}, callback=self._subscribe_callback)
+
   #   (device, changes) => {
   #     self._data = device._data;
   #     self._fetched = true;
@@ -222,6 +226,11 @@ class Device(object):
   #     }
   #   });
   # }
+
+
+  def _subscribe_callback(self, changes, device):
+
+    pass
 
 
   def discard_changes(self):
