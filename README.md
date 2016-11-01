@@ -63,6 +63,6 @@ device = project.device('DEVICE_ID')
 device.get('speed') # 100
 device.set('speed', 10)
 device.get('speed') # 10
-device.discar_cChanges()
+device.discard_changes()
 device.get('speed') # 100
 ```
