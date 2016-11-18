@@ -10,11 +10,33 @@ from pyee import EventEmitter
 
 
 class Project(object):
+  """
+    Instance object to allow interaction with a specific project in the Skygrid API
+  """
 
   _emitter = EventEmitter()
   _self = None
 
   def __init__(self, project_id, address=None, api=None, master_key=None):
+    """
+      Project Constructor
+
+      Parameters
+      __________
+
+      project_id : str
+        Unique identifier for the project, as named on dashboard.skygrid.io
+
+      address : str, optional
+        Custom URL to connect to as skygrid API server
+
+      api : {None, 'rest', 'websocket'}
+        Which type of API interface to use
+
+      master_key : str, optional
+        Associated master key for the specified project, defaults to None.
+    """
+
     _self = self
 
     if api == None:
@@ -26,7 +48,7 @@ class Project(object):
     if api is 'websocket':
       self._api = SocketApi(address, project_id, self._emitter)
 
-    elif address is 'rest':
+    elif api is 'rest':
       raise Exception('Rest api not supported')
 
     else:
@@ -41,6 +63,9 @@ class Project(object):
 
 
   def login(self, email, password):
+    """
+      TODO: 
+    """
     data = self._api.request('login', {'email': email, 'password': password})
 
     if 'token' in data:
@@ -56,15 +81,26 @@ class Project(object):
     
   
   def login_master(self, master_key):
+    """
+      TODO:
+    """
     return self._api.request('loginMaster', { 'masterKey': master_key})
 
 
   def logout(self):
+    """
+      TODO: 
+    """
+
     self._api.request('logout')
     self._user = None
 
 
   def signup(self, email, password, meta=None):
+    """
+      TODO: 
+    """
+
     data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
 
     if 'id' in data:
@@ -78,10 +114,16 @@ class Project(object):
 
 
   def user(self, user_id):
+    """
+      TODO:
+    """
     return User(self._api, user_id)
 
 
   def users(self, constraints={}, fetch=True):
+    """
+      TODO:
+    """
     users = self._api.request('findUsers', {'constraints': constraints, 'fetch': fetch})
 
     for index, user in enumerate(users):
@@ -91,6 +133,9 @@ class Project(object):
 
 
   def add_schema(self, name):
+    """
+      TODO:
+    """
     data = self._api.request('addDeviceSchema', {'name': name})
 
     if 'id' in data:
@@ -104,10 +149,17 @@ class Project(object):
 
 
   def schema(self, schema_id):
+    """
+      TODO:
+    """
     return Schema(self._api, schema_id)
   
 
   def schemas(self, constraints={}, fetch=True):
+    """
+      TODO:
+    """
+
     schemas = self._api.request('findDeviceSchemas', {'constraints': constraints, 'fetch': fetch})
 
     for index, schema in enumerate(schemas):
@@ -117,6 +169,9 @@ class Project(object):
 
 
   def add_device(self, name, schema=None, schema_id=None):
+    """
+      TODO:
+    """
     if schema_id is not None:
       device = self._api.request('addDevice', {'name': name, 'schemaId': schema_id})
       return self.device(device['id']).fetch()
@@ -130,10 +185,16 @@ class Project(object):
 
 
   def device(self, device_id):
+    """
+      TODO:
+    """
     return Device(self._api, device_id)
 
 
   def devices(self, constraints={}, fetch=True):
+    """
+      TODO:
+    """
     devices = self._api.request('findDevices', {'constraints': constraints, 'fetch': fetch})
 
     for index, device in enumerate(devices):
@@ -143,6 +204,9 @@ class Project(object):
 
 
   def subscribe(self, settings={}, callback=None):
+    """
+      TODO:
+    """
     if callback is None:
       raise Exception('No callback function provided')
 
@@ -150,10 +214,16 @@ class Project(object):
 
 
   def remove_subscriptions(self):
+    """
+      TODO:
+    """
     return self._subscription_manager.remove_subscriptions()
 
 
   def close(self):
+    """
+      TODO:
+    """
     self.remove_subscriptions()
     self._api.close()
     
@@ -163,19 +233,31 @@ class Project(object):
 
 
   def _setup_listeners(self):
+    """
+      TODO:
+    """
     self._emitter.on('connect',    self._event_connect)
     self._emitter.on('update',     self._event_update)
     self._emitter.on('disconnect', self._event_disconnect)
 
 
   def _event_connect(self):
+    """
+      TODO:
+    """
     self._subscription_manager.request_subscriptions()
 
 
   def _event_update(self, message):
+    """
+      TODO:
+    """
     device = self.device(message['device'])
     self._subscription_manager.run(message['id'], message['changes'], device)
-
+    
 
   def _event_disconnect(self):
+    """
+      TODO:
+    """
     self._subscription_manager.invalidate_subscriptions()

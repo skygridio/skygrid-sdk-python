@@ -1,0 +1,15 @@
+{
+	"_comment" : "this is a set of projects/schemas/items that will be tested throughout the testing field",
+	"projects" : [
+		{
+			"project1": {
+				"id" : "",
+				"schemas" : [
+					{
+						"id": ""
+					}
+				]
+			}
+		}
+	]
+}
