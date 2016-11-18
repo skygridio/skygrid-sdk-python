@@ -3,10 +3,21 @@
 	"projects" : [
 		{
 			"project1": {
-				"id" : "",
+				"id" : "oCjf42d8",
+				"users" : [
+					{"email": "skygridtest@gmail.com", "password": "hacktheworld"}
+				],
 				"schemas" : [
 					{
-						"id": ""
+						"id": "hyUWjvpZ",
+						"name": "ExpectedName"
+					}
+				],
+				"devices" : [
+					{
+						"id": "UH1Bk-7V",
+						"schema": "hyUWjvpZ",
+
 					}
 				]
 			}

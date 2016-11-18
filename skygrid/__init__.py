@@ -1,5 +1,5 @@
 API_BASE = 'https://api.skygrid.io'
-DEFAULT_API = 'websocket'
+DEFAULT_API = 'rest'
 #API_BASE = 'localhost'
 
 from skygrid.device import Device

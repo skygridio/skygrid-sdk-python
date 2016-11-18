@@ -8,14 +8,16 @@ from .user import User
 
 from pyee import EventEmitter
 
-
 class Project(object):
   """
     Instance object to allow interaction with a specific project in the Skygrid API
-  """
 
+    Attributes
+    __________
+    _emitter : EventEmitter
+      TODO: but its something to do with node events atm
+  """
   _emitter = EventEmitter()
-  _self = None
 
   def __init__(self, project_id, address=None, api=None, master_key=None):
     """
@@ -23,7 +25,6 @@ class Project(object):
 
       Parameters
       __________
-
       project_id : str
         Unique identifier for the project, as named on dashboard.skygrid.io
 
@@ -31,13 +32,17 @@ class Project(object):
         Custom URL to connect to as skygrid API server
 
       api : {None, 'rest', 'websocket'}
-        Which type of API interface to use
+        Which type of API interface to use.
+        If None is supplied, defaults to __init__.py->DEFAULT_API.
 
       master_key : str, optional
         Associated master key for the specified project, defaults to None.
-    """
 
-    _self = self
+      Raises
+      ______
+      NotImplementedError
+        If the supplied API string is invalid, or simply hasn't been implemented yet.
+    """
 
     if api == None:
       api = DEFAULT_API
@@ -47,12 +52,15 @@ class Project(object):
 
     if api is 'websocket':
       self._api = SocketApi(address, project_id, self._emitter)
+      #placing this here to discourage use of deprecation
+      raise DeprecationWarning('Socketio websocket API likely to be deprecated in python, replaced with pure ws')
 
     elif api is 'rest':
-      raise Exception('Rest api not supported')
+      self._api = RestApi(address, project_id)
+      raise FutureWarning('REST API not finished')
 
     else:
-      raise Exception('Unknown api type')
+      raise NotImplementedError('Unknown API type')
 
     self._project_id = project_id
     self._master_key = master_key
@@ -62,9 +70,14 @@ class Project(object):
     self._setup_listeners()
 
 
+  @property
+  def id(self):
+    return self._project_id
+
+
   def login(self, email, password):
     """
-      TODO: 
+      TODO:
     """
     data = self._api.request('login', {'email': email, 'password': password})
 
@@ -254,7 +267,7 @@ class Project(object):
     """
     device = self.device(message['device'])
     self._subscription_manager.run(message['id'], message['changes'], device)
-    
+
 
   def _event_disconnect(self):
     """

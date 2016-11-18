@@ -1,17 +1,20 @@
-#from rest_api import RestApi
-from .socket_api import SocketApi
+class Api():
+	def request(self, name, data=None):
+		"""
+		The Virtual method that all APIs should implement
 
+		Attributes
+		__________
+		name : str
+			The name of the endpoint to request
 
-class Api(object):
+		data : str, optional
+			Data that can be supplied to the request, defaults to None
+		"""
+		raise NotImplementedError("request must be called on a concrete Api instance")
 
-  def __init__(self):
-    self._emitter = None
-    self.api = None
-
-
-  def add_listener(self, name, callback):
-    self._emitter.add_listener(name, callback)
-
-
-  def request(self, name, data=None):
-    return self.api.request(name, data)
+	def close(self):
+		"""
+		The virtual method that closes the connection, if need be
+		"""
+		raise NotImplementedError("close must be called on a concrete Api instance")
