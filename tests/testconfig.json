@@ -10,7 +10,10 @@
 				"schemas" : [
 					{
 						"id": "hyUWjvpZ",
-						"name": "ExpectedName"
+						"name": "ExpectedName",
+						"fields": {
+							"PropertyA" : 
+						}
 					}
 				],
 				"devices" : [

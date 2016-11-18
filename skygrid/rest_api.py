@@ -1,10 +1,10 @@
 import requests
-import api
+from .api import Api
 import json
 
 DEBUG = True
 
-class RestApi(api.Api):
+class RestApi(Api):
 	"""
 	Concrete API class that utilises the SkyGrid REST API interface.
 	"""

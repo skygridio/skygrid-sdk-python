@@ -1,6 +1,7 @@
 from skygrid import API_BASE, DEFAULT_API
 
 from .socket_api import SocketApi
+from .rest_api import RestApi
 from .device import Device
 from .schema import Schema
 from .subscription_manager import SubscriptionManager
