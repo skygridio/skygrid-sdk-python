@@ -12,14 +12,14 @@ class RestApi(Api):
 		"""
 		RestAPI Constructor
 
-		Attributes
+		Parameters
 		__________
 		address : str
 			The REST API URL
 		project_id : str
 			The unique identifier for the project to be interacted with.
 		"""
-
+		self._endpoints = None
 		self._address = address
 		self._project_id = project_id
 		self._master_key = None
@@ -96,45 +96,49 @@ class RestApi(Api):
 		dict 
 			Key/value dict of endpoint names, and their associated lambda functions
 		"""
-		return {
-			"signup": lambda data: self._fetchJson("/users", {"method": "post", "body": data}),
+		#if the dictionary has not been registered, register it
+		if self._endpoints is None:
+			self._endpoints = {
+				"signup": lambda data: self._fetchJson("/users", {"method": "post", "body": data}),
 
-			"login": lambda data: self._updateToken(self._fetchJson("/login", {"method":"post", "body":data})),
-			#TODO: implement - also, don't hurt me for temporary exec
-			"loginMaster": lambda data: exec('raise NotImplementedError("loginMaster unimplemented")'),
+				"login": lambda data: self._updateToken(self._fetchJson("/login", {"method":"post", "body":data})),
+				#TODO: implement - also, don't hurt me for temporary exec
+				"loginMaster": lambda data: exec('raise NotImplementedError("loginMaster unimplemented")'),
 
-			"logout": lambda data=None: self._fetchJson("/logout", {"method":"post"}),
+				"logout": lambda data=None: self._fetchJson("/logout", {"method":"post"}),
 
-			"fetchUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method": "get"}),
+				"fetchUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method": "get"}),
 
-			"findUsers": lambda data: self._fetchJson(RestApi.generateQueryUrl("/users", data["constraints"]), {"method":"get"}),
+				"findUsers": lambda data: self._fetchJson(RestApi.generateQueryUrl("/users", data["constraints"]), {"method":"get"}),
 
-			"deleteUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method":"delete"}), 
+				"deleteUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method":"delete"}), 
 
-			"findDeviceSchemas": lambda data: self._fetchJson(RestApi.generateQueryUrl("/schemas", data["constraints"]), {"method":"get"}),
+				"findDeviceSchemas": lambda data: self._fetchJson(RestApi.generateQueryUrl("/schemas", data["constraints"]), {"method":"get"}),
 
-			"addDeviceSchema": lambda data: self._fetchJson("/schemas", { "method": "post", "body": data }),
+				"addDeviceSchema": lambda data: self._fetchJson("/schemas", { "method": "post", "body": data }),
 
-			"fetchDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]), { "method": "get" }),
+				"fetchDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]), { "method": "get" }),
 
-			"updateDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data.pop("schemaId")), {"method": "put", "body": data}),
+				"updateDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data.pop("schemaId")), {"method": "put", "body": data}),
 
-			"deleteDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]), { "method": "delete" }),
+				"deleteDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]), { "method": "delete" }),
 
-			"findDevices": lambda data: self._fetchJson(RestApi.generateQueryUrl("/devices", data["constraints"]), {"method": "get"}),
+				"findDevices": lambda data: self._fetchJson(RestApi.generateQueryUrl("/devices", data["constraints"]), {"method": "get"}),
 
-			"addDevice": lambda data: self._fetchJson("/devices", { "method": "post", "body": data }),
+				"addDevice": lambda data: self._fetchJson("/devices", { "method": "post", "body": data }),
 
-			"fetchDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), { "method": "get" }),
+				"fetchDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), { "method": "get" }),
 
-			"updateDevice": lambda data: self._fetchJson("/devices/{}".format(data.pop("deviceId")), {"method": "put", "body":data}),
+				"updateDevice": lambda data: self._fetchJson("/devices/{}".format(data.pop("deviceId")), {"method": "put", "body":data}),
 
-			"deleteDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), { "method": "delete" }),
+				"deleteDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), { "method": "delete" }),
 
-			"fetchHistory": lambda data: self._fetchJson("/history/{}".format(data["deviceId"]), { "method": 'get' }),
+				"fetchHistory": lambda data: self._fetchJson("/history/{}".format(data["deviceId"]), { "method": 'get' }),
 
-			"getServerTime": lambda data=None: self._fetchJson("/time", { "method": "get" })
-		}
+				"getServerTime": lambda data=None: self._fetchJson("/time", { "method": "get" })
+			}
+
+		return self._endpoints
 
 	def _updateToken(self, data):
 		"""
@@ -147,7 +151,7 @@ class RestApi(Api):
 		"""
 		Request an endpoint procedure to be called.
 
-		Attributes
+		Parameters
 		__________
 		name : str
 			The name of the endpoint we wish to call

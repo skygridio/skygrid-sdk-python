@@ -78,7 +78,16 @@ class Project(object):
 
   def login(self, email, password):
     """
-      TODO:
+      Log into the user that is a client of the project.
+      Note: this is _not_ the credentials used to log into the dashboard
+      Instead, this is a user of a project, created via the dashboard/signup API command
+
+      Parameters
+      __________
+      email : str
+        The email of the user to log in
+      password : str
+        The associated password
     """
     data = self._api.request('login', {'email': email, 'password': password})
 
@@ -103,7 +112,7 @@ class Project(object):
 
   def logout(self):
     """
-      TODO: 
+      Logs the current user out. Must be logged in first. 
     """
 
     self._api.request('logout')
@@ -112,7 +121,14 @@ class Project(object):
 
   def signup(self, email, password, meta=None):
     """
-      TODO: 
+      Creates a user as a client of the project.
+
+      Parameters
+      __________
+      email : str
+        The username for the user
+      password : str
+        Associated password for the newly created client
     """
 
     data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
@@ -129,7 +145,12 @@ class Project(object):
 
   def user(self, user_id):
     """
-      TODO:
+      Fetch the user object from its unique identifier.
+
+      Parameters
+      __________
+      user_id : str
+        A user's unique identifier
     """
     return User(self._api, user_id)
 
@@ -236,7 +257,8 @@ class Project(object):
 
   def close(self):
     """
-      TODO:
+      Close the current project, removing all active subscriptions,
+      and API connections.
     """
     self.remove_subscriptions()
     self._api.close()
@@ -248,7 +270,7 @@ class Project(object):
 
   def _setup_listeners(self):
     """
-      TODO:
+      TO-DO:
     """
     self._emitter.on('connect',    self._event_connect)
     self._emitter.on('update',     self._event_update)
