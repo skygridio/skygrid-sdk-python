@@ -4,171 +4,181 @@ import json
 
 DEBUG = True
 
+
 class RestApi(Api):
-	"""
-	Concrete API class that utilises the SkyGrid REST API interface.
-	"""
-	def __init__(self, address, project_id):
-		"""
-		RestAPI Constructor
+    """
+    Concrete API class that utilises the SkyGrid REST API interface.
+    """
 
-		Parameters
-		__________
-		address : str
-			The REST API URL
-		project_id : str
-			The unique identifier for the project to be interacted with.
-		"""
-		self._endpoints = None
-		self._address = address
-		self._project_id = project_id
-		self._master_key = None
-		self._token = None
+    def __init__(self, address, project_id):
+        """
+        RestAPI Constructor
 
-	def _fetchJson(self, path, data):
-		"""
-		Simply performs a HTTP request following orders of data, to path specified
+        Parameters
+        __________
+        address : str
+            The REST API URL
+        project_id : str
+            The unique identifier for the project to be interacted with.
+        """
+        self._endpoints = None
+        self._address = address
+        self._project_id = project_id
+        self._master_key = None
+        self._token = None
 
-		Parameters
-		__________
-		path : str
-			Which dir to fetch from
-		data : json dict
-			Parameters for the request, including HTTP verb
-		"""
-		
-		if "method" not in data:
-			raise ValueError("Request method not specified")
+    def _fetchJson(self, path, data):
+        """
+        Simply performs a HTTP request following orders of data, to path specified
 
-		ret_val = None
+        Parameters
+        __________
+        path : str
+            Which dir to fetch from
+        data : json dict
+            Parameters for the request, including HTTP verb
+        """
 
-		#set up HTTP headers
-		headers = data['headers'] if 'headers' in data else {}
-		headers['Accept'] = 'application/json'
-		headers['Content-Type'] = 'application/json'
+        if "method" not in data:
+            raise ValueError("Request method not specified")
 
-		if self._token:
-			headers['X-Access-Token'] = self._token
-		else:
-			if self._master_key:
-				headers['X-Master-Key'] = self._master_key
-			headers['X-Project-ID'] = self._project_id
+        ret_val = None
 
-		payload = ""
-		if "body" in data:
-			payload = json.dumps(data["body"])
+        # set up HTTP headers
+        headers = data['headers'] if 'headers' in data else {}
+        headers['Accept'] = 'application/json'
+        headers['Content-Type'] = 'application/json'
 
-		method = data.pop("method")
-		url = self._address + path
+        if self._token:
+            headers['X-Access-Token'] = self._token
+        else:
+            if self._master_key:
+                headers['X-Master-Key'] = self._master_key
+            headers['X-Project-ID'] = self._project_id
 
-		#perform the correct request as per the method
-		if "get" == method:
-			#pass payload as URL params for get request
-			ret_val = requests.get(url, headers=headers, params=payload).json()
-		elif "post" == method:
-			#pass payload as body data for other methods
-			ret_val = requests.post(url, headers=headers, data=payload).json()
-		elif "delete" == method:
-			ret_val = requests.delete(url, headers=headers, data=payload).json()
-		elif "put" == method:
-			ret_val = requests.put(url, headers=headers, data=payload).json()
-		else:
-			raise ValueError("invalid method passed to fetchJson")
+        payload = ""
+        if "body" in data:
+            payload = json.dumps(data["body"])
 
-		return ret_val
+        method = data.pop("method")
+        url = self._address + path
 
-	@staticmethod
-	def generateQueryUrl(url, queries=None):
-		"""
-		Return a URL encoding of the supplied 
-		"""
-		if (queries):
-			url += "?where=" + requests.utils.quote(json.dumps(queries))
-		return url
+        # perform the correct request as per the method
+        if "get" == method:
+            # pass payload as URL params for get request
+            ret_val = requests.get(url, headers=headers, params=payload).json()
+        elif "post" == method:
+            # pass payload as body data for other methods
+            ret_val = requests.post(url, headers=headers, data=payload).json()
+        elif "delete" == method:
+            ret_val = requests.delete(url, headers=headers, data=payload).json()
+        elif "put" == method:
+            ret_val = requests.put(url, headers=headers, data=payload).json()
+        else:
+            raise ValueError("invalid method passed to fetchJson")
 
-	@property
-	def endpoints(self):
-		"""
-		Returns the endpoints applicable to this API
+        return ret_val
 
-		Returns
-		_______
-		dict 
-			Key/value dict of endpoint names, and their associated lambda functions
-		"""
-		#if the dictionary has not been registered, register it
-		if self._endpoints is None:
-			self._endpoints = {
-				"signup": lambda data: self._fetchJson("/users", {"method": "post", "body": data}),
+    @staticmethod
+    def generateQueryUrl(url, queries=None):
+        """
+        Return a URL encoding of the supplied
+        """
+        if (queries):
+            url += "?where=" + requests.utils.quote(json.dumps(queries))
+        return url
 
-				"login": lambda data: self._updateToken(self._fetchJson("/login", {"method":"post", "body":data})),
-				#TODO: implement - also, don't hurt me for temporary exec
-				"loginMaster": lambda data: exec('raise NotImplementedError("loginMaster unimplemented")'),
+    @property
+    def endpoints(self):
+        """
+        Returns the endpoints applicable to this API
 
-				"logout": lambda data=None: self._fetchJson("/logout", {"method":"post"}),
+        Returns
+        _______
+        dict
+            Key/value dict of endpoint names, and their associated lambda functions
+        """
+        # if the dictionary has not been registered, register it
+        if self._endpoints is None:
+            self._endpoints = {
+                "signup": lambda data: self._fetchJson("/users", {"method": "post", "body": data}),
 
-				"fetchUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method": "get"}),
+                "login": lambda data: self._updateToken(self._fetchJson("/login", {"method": "post", "body": data})),
+                # TODO: implement - also, don't hurt me for temporary exec
+                "loginMaster": lambda data: exec('raise NotImplementedError("loginMaster unimplemented")'),
 
-				"findUsers": lambda data: self._fetchJson(RestApi.generateQueryUrl("/users", data["constraints"]), {"method":"get"}),
+                "logout": lambda data=None: self._fetchJson("/logout", {"method": "post"}),
 
-				"deleteUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method":"delete"}), 
+                "fetchUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method": "get"}),
 
-				"findDeviceSchemas": lambda data: self._fetchJson(RestApi.generateQueryUrl("/schemas", data["constraints"]), {"method":"get"}),
+                "findUsers": lambda data: self._fetchJson(RestApi.generateQueryUrl("/users", data["constraints"]),
+                                                          {"method": "get"}),
 
-				"addDeviceSchema": lambda data: self._fetchJson("/schemas", { "method": "post", "body": data }),
+                "deleteUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method": "delete"}),
 
-				"fetchDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]), { "method": "get" }),
+                "findDeviceSchemas": lambda data: self._fetchJson(
+                    RestApi.generateQueryUrl("/schemas", data["constraints"]), {"method": "get"}),
 
-				"updateDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data.pop("schemaId")), {"method": "put", "body": data}),
+                "addDeviceSchema": lambda data: self._fetchJson("/schemas", {"method": "post", "body": data}),
 
-				"deleteDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]), { "method": "delete" }),
+                "fetchDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]),
+                                                                  {"method": "get"}),
 
-				"findDevices": lambda data: self._fetchJson(RestApi.generateQueryUrl("/devices", data["constraints"]), {"method": "get"}),
+                "updateDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data.pop("schemaId")),
+                                                                   {"method": "put", "body": data}),
 
-				"addDevice": lambda data: self._fetchJson("/devices", { "method": "post", "body": data }),
+                "deleteDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]),
+                                                                   {"method": "delete"}),
 
-				"fetchDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), { "method": "get" }),
+                "findDevices": lambda data: self._fetchJson(RestApi.generateQueryUrl("/devices", data["constraints"]),
+                                                            {"method": "get"}),
 
-				"updateDevice": lambda data: self._fetchJson("/devices/{}".format(data.pop("deviceId")), {"method": "put", "body":data}),
+                "addDevice": lambda data: self._fetchJson("/devices", {"method": "post", "body": data}),
 
-				"deleteDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), { "method": "delete" }),
+                "fetchDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), {"method": "get"}),
 
-				"fetchHistory": lambda data: self._fetchJson("/history/{}".format(data["deviceId"]), { "method": 'get' }),
+                "updateDevice": lambda data: self._fetchJson("/devices/{}".format(data.pop("deviceId")),
+                                                             {"method": "put", "body": data}),
 
-				"getServerTime": lambda data=None: self._fetchJson("/time", { "method": "get" })
-			}
+                "deleteDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]),
+                                                             {"method": "delete"}),
 
-		return self._endpoints
+                "fetchHistory": lambda data: self._fetchJson("/history/{}".format(data["deviceId"]), {"method": 'get'}),
 
-	def _updateToken(self, data):
-		"""
-		Simply updates self.token to the data.token
-		"""
-		self._token = data["token"]
-		return data
+                "getServerTime": lambda data=None: self._fetchJson("/time", {"method": "get"})
+            }
 
-	def request(self, name, data=None):
-		"""
-		Request an endpoint procedure to be called.
+        return self._endpoints
 
-		Parameters
-		__________
-		name : str
-			The name of the endpoint we wish to call
-		data : dict, optional
-			The associated data for the request, defaults to None
+    def _updateToken(self, data):
+        """
+        Simply updates self.token to the data.token
+        """
+        self._token = data["token"]
+        return data
 
-		Returns
-		_______
-		The JSON object returned by the server for this request
-		"""
-		#attempt to execute the requested endpoint
-		reqFunc = self.endpoints[name]
-		return reqFunc(data)
-		
-	def close(self):
-		"""
-		Unused for REST API
-		"""
-		#Future HTTP cleanup requests would be placed here
-		pass
+    def request(self, name, data=None):
+        """
+        Request an endpoint procedure to be called.
+
+        Parameters
+        __________
+        name : str
+            The name of the endpoint we wish to call
+        data : dict, optional
+            The associated data for the request, defaults to None
+
+        Returns
+        _______
+        The JSON object returned by the server for this request
+        """
+        # attempt to execute the requested endpoint
+        reqFunc = self.endpoints[name]
+        return reqFunc(data)
+
+    def close(self):
+        """
+        Unused for REST API
+        """
+        # Future HTTP cleanup requests would be placed here
+        pass
