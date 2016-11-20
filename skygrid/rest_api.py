@@ -83,9 +83,6 @@ class RestApi(Api):
         else:
             raise ValueError("invalid method passed to fetchJson")
 
-        if ret_val.status_code == 401:
-            raise AuthenticationError("Invalid credentials")
-
         if len(ret_val.text) == 0:
             return {}
         return ret_val.json()
@@ -115,7 +112,8 @@ class RestApi(Api):
                 "signup": lambda data: self._fetch_json("/users", {"method": "post", "body": data}),
 
                 "login": lambda data: self._update_token(self._fetch_json("/login", {"method": "post", "body": data})),
-                # TODO: implement - also, don't hurt me for temporary exec
+
+                # TODO: implement, using the _set_master function
                 "loginMaster": lambda data: exec('raise NotImplementedError("loginMaster unimplemented")'),
 
                 "logout": lambda data=None: self._fetch_json("/logout", {"method": "post"}),
@@ -162,6 +160,30 @@ class RestApi(Api):
             }
 
         return self._endpoints
+
+    def _set_master(self, data):
+        """
+        To be used for setting the master key
+
+        Parameters
+        __________
+        data : str
+            response from _fetch_json
+
+        Returns
+        _______
+        dict
+            response from _fetch_json
+        """
+        if 'status' in data and data['status'] == 'error':
+            raise AuthenticationError(data['data'])
+        elif 'results' in data:
+            raise ProjectError(data)
+        elif 'token' not in data:
+            raise ValueError("Master Key missing from data response", data)
+
+        self._master_key = data["token"]
+        return data
 
     def _update_token(self, data):
         """

@@ -1,7 +1,11 @@
-# indicates the login has failed
-class AuthenticationError(ValueError):
+class SkygridException(Exception):
     pass
 
 
-class ProjectError(ValueError):
+# indicates the login has failed
+class AuthenticationError(SkygridException):
+    pass
+
+
+class ProjectError(SkygridException):
     pass

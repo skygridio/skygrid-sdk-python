@@ -6,7 +6,7 @@ from .device import Device
 from .schema import Schema
 from .subscription_manager import SubscriptionManager
 from .user import User
-from .exception import AuthenticationError
+from .exception import AuthenticationError, SkygridException
 
 from pyee import EventEmitter
 
@@ -62,7 +62,7 @@ class Project(object):
 
         elif api == 'rest':
             self._api = RestApi(address, project_id)
-            #raise FutureWarning('REST API not finished')
+            # raise FutureWarning('REST API not finished')
 
         else:
             raise NotImplementedError('Unknown API type')
@@ -99,65 +99,71 @@ class Project(object):
                           'token': data['token']}
 
         elif type(data) is str:
-            raise Exception(data)
+            raise SkygridException(data)
 
         else:
             raise AuthenticationError('Unable to log in')
 
     def login_master(self, master_key):
         """
-          TODO:
+        Log into the project using a masterkey.
+        This is useful when accessing private API methods, such as signup, add_schema, and delete_device.
+
+        Parameters
+        __________
+        master_key : str
+            The unique master key for a given project
+
+        Returns
+        _______
+        JSON response after logging in
+        TODO: this may be changed.
         """
         return self._api.request('loginMaster', {'masterKey': master_key})
 
     def logout(self):
         """
-          Logs the current user out, no action if no user currently logged in.
+        Logs the current user out, no action if no user currently logged in.
         """
-
         self._api.request('logout')
         self._user = None
 
     def signup(self, email, password, meta=None):
         """
-          Creates a user as a client of the project.
-          Required to be logged in using a masterkey.
+        Creates a user as a client of the project.
+        Required to be logged in using a masterkey.
 
-          Parameters
-          __________
-          email : str
+        Parameters
+        __________
+        email : str
             The username for the new user
-          password : str
+        password : str
             Associated password for the newly created client
 
-          TODO: meta
+        TODO: meta
         """
-
         data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
-        print(data, type(data))
         if 'id' in data:
             return self.user(data['id']).fetch()
-
         elif type(data) is str:
             raise Exception(data)
-
         else:
             raise AuthenticationError('Unable to create new user:', data['data'])
 
     def user(self, user_id):
         """
-          Fetch the user object from its unique identifier.
+        Fetch the user object from its unique identifier.
 
-          Parameters
-          __________
-          user_id : str
+        Parameters
+        __________
+        user_id : str
             A user's unique identifier
         """
         return User(self._api, user_id).fetch()
 
     def users(self, constraints={}, fetch=True):
         """
-          TODO:
+
         """
         users = self._api.request('findUsers', {'constraints': constraints, 'fetch': fetch})
 
@@ -189,24 +195,23 @@ class Project(object):
 
     def schemas(self, constraints={}, fetch=True):
         """
-          TODO:
+        Grab the current updated list of all schemas for the current project.
+
+        Attributes
+        __________
+        constraints : dict
+            TODO: explain usage
+        fetch : bool
+            Determines whether the full schema object should be fetched, or just the description.  Defaults to true.
+
+        Returns
+        _______
+        A list of all Schema objects for this project
         """
 
         schemas = self._api.request('findDeviceSchemas', {'constraints': constraints, 'fetch': fetch})
-
         # we must construct a list of schema objects, which are injected with the schema data we already fetched
         return [Schema(self._api, sc) for sc in schemas]
-        # ret_schemas = []
-        # for sc in schemas:
-        #     ret_schemas.append(Schema(self._api, sc['id']))
-        #
-        # return ret_schemas
-        #
-        # #
-        # # for index, schema in enumerate(schemas):
-        # #     schemas[index] = self.schema(schema)
-        #
-        # # return list(map(lambda x: self.schema(x['id']).fetch(), schemas))
 
     def add_device(self, name, schema=None, schema_id=None):
         """
@@ -221,24 +226,24 @@ class Project(object):
             return self.device(device['id']).fetch()
 
         else:
-            raise Exception('No schema provided')
+            raise SkygridException('No schema provided')
 
     def device(self, device_id):
         """
           TODO:
         """
-        return Device(self._api, device_id)
+        return Device(self._api, device_id).fetch()
 
     def devices(self, constraints={}, fetch=True):
         """
           TODO:
         """
         devices = self._api.request('findDevices', {'constraints': constraints, 'fetch': fetch})
-
-        for index, device in enumerate(devices):
-            devices[index] = self.device(device)
-
-        return devices
+        return [Device(self._api, dv) for dv in devices]
+        # for index, device in enumerate(devices):
+        #     devices[index] = self.device(device)
+        #
+        # return devices
 
     def subscribe(self, settings={}, callback=None):
         """

@@ -27,6 +27,7 @@ class Schema(object):
     def id(self):
         return self._data['id']
 
+    @property
     def name(self):
         if 'name' in self._changes:
             return self._changes['name']
@@ -37,6 +38,7 @@ class Schema(object):
         self._changes['name'] = value
         self._changed = True
 
+    @property
     def description(self):
         if 'description' in self._changes:
             return self._changes['description']

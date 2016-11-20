@@ -62,8 +62,8 @@
       "_comment": "this project is simply for creating and deleting users",
       "users": [
         {
-          "email": "mutt@mail.com",
-          "password": "hacktheworld3"
+          "email": "mutt2@mail.com",
+          "password": "kissmygrits"
         }
       ]
     },
