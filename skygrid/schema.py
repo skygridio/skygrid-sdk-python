@@ -4,7 +4,7 @@ from .util import *
 
 class Schema(object):
     def __init__(self, api, data=None):
-        if data == None:
+        if data is None:
             raise Exception('No device data/ID supplied')
 
         self._api = api
@@ -23,6 +23,7 @@ class Schema(object):
         elif type(data) is str:
             self._data = {'id': data, 'properties': {}}
 
+    @property
     def id(self):
         return self._data['id']
 

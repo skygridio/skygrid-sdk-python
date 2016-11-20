@@ -6,6 +6,7 @@ from .device import Device
 from .schema import Schema
 from .subscription_manager import SubscriptionManager
 from .user import User
+from .exception import AuthenticationError
 
 from pyee import EventEmitter
 
@@ -46,20 +47,22 @@ class Project(object):
             If the supplied API string is invalid, or simply hasn't been implemented yet.
         """
 
-        if api == None:
+        self._user = None
+
+        if api is None:
             api = DEFAULT_API
 
-        if address == None:
+        if address is None:
             address = API_BASE
 
-        if api is 'websocket':
+        if api == 'websocket':
             self._api = SocketApi(address, project_id, self._emitter)
             # placing this here to discourage use of deprecation
             raise DeprecationWarning('Socketio websocket API likely to be deprecated in python, replaced with pure ws')
 
-        elif api is 'rest':
+        elif api == 'rest':
             self._api = RestApi(address, project_id)
-            raise FutureWarning('REST API not finished')
+            #raise FutureWarning('REST API not finished')
 
         else:
             raise NotImplementedError('Unknown API type')
@@ -99,7 +102,7 @@ class Project(object):
             raise Exception(data)
 
         else:
-            raise Exception('Unable to log in')
+            raise AuthenticationError('Unable to log in')
 
     def login_master(self, master_key):
         """
@@ -109,7 +112,7 @@ class Project(object):
 
     def logout(self):
         """
-          Logs the current user out. Must be logged in first.
+          Logs the current user out, no action if no user currently logged in.
         """
 
         self._api.request('logout')
@@ -118,17 +121,20 @@ class Project(object):
     def signup(self, email, password, meta=None):
         """
           Creates a user as a client of the project.
+          Required to be logged in using a masterkey.
 
           Parameters
           __________
           email : str
-            The username for the user
+            The username for the new user
           password : str
             Associated password for the newly created client
+
+          TODO: meta
         """
 
         data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
-
+        print(data, type(data))
         if 'id' in data:
             return self.user(data['id']).fetch()
 
@@ -136,7 +142,7 @@ class Project(object):
             raise Exception(data)
 
         else:
-            raise Exception('Unable to create new user')
+            raise AuthenticationError('Unable to create new user:', data['data'])
 
     def user(self, user_id):
         """
@@ -147,7 +153,7 @@ class Project(object):
           user_id : str
             A user's unique identifier
         """
-        return User(self._api, user_id)
+        return User(self._api, user_id).fetch()
 
     def users(self, constraints={}, fetch=True):
         """
@@ -179,7 +185,7 @@ class Project(object):
         """
           TODO:
         """
-        return Schema(self._api, schema_id)
+        return Schema(self._api, schema_id).fetch()
 
     def schemas(self, constraints={}, fetch=True):
         """
@@ -188,10 +194,19 @@ class Project(object):
 
         schemas = self._api.request('findDeviceSchemas', {'constraints': constraints, 'fetch': fetch})
 
-        for index, schema in enumerate(schemas):
-            schemas[index] = self.schema(schema)
-
-        return schemas
+        # we must construct a list of schema objects, which are injected with the schema data we already fetched
+        return [Schema(self._api, sc) for sc in schemas]
+        # ret_schemas = []
+        # for sc in schemas:
+        #     ret_schemas.append(Schema(self._api, sc['id']))
+        #
+        # return ret_schemas
+        #
+        # #
+        # # for index, schema in enumerate(schemas):
+        # #     schemas[index] = self.schema(schema)
+        #
+        # # return list(map(lambda x: self.schema(x['id']).fetch(), schemas))
 
     def add_device(self, name, schema=None, schema_id=None):
         """
@@ -248,8 +263,8 @@ class Project(object):
         self.remove_subscriptions()
         self._api.close()
 
-        self._projectId = None
-        self._masterKey = None
+        self._project_id = None
+        self._master_key = None
         self._user = None
 
     def _setup_listeners(self):

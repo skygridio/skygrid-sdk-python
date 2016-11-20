@@ -1,6 +1,7 @@
 import requests
 from .api import Api
 import json
+from .exception import *
 
 DEBUG = True
 
@@ -27,7 +28,7 @@ class RestApi(Api):
         self._master_key = None
         self._token = None
 
-    def _fetchJson(self, path, data):
+    def _fetch_json(self, path, data):
         """
         Simply performs a HTTP request following orders of data, to path specified
 
@@ -37,6 +38,11 @@ class RestApi(Api):
             Which dir to fetch from
         data : json dict
             Parameters for the request, including HTTP verb
+
+        Returns
+        _______
+        dict
+            JSON object representing the response
         """
 
         if "method" not in data:
@@ -66,25 +72,30 @@ class RestApi(Api):
         # perform the correct request as per the method
         if "get" == method:
             # pass payload as URL params for get request
-            ret_val = requests.get(url, headers=headers, params=payload).json()
+            ret_val = requests.get(url, headers=headers, params=payload)
         elif "post" == method:
             # pass payload as body data for other methods
-            ret_val = requests.post(url, headers=headers, data=payload).json()
+            ret_val = requests.post(url, headers=headers, data=payload)
         elif "delete" == method:
-            ret_val = requests.delete(url, headers=headers, data=payload).json()
+            ret_val = requests.delete(url, headers=headers, data=payload)
         elif "put" == method:
-            ret_val = requests.put(url, headers=headers, data=payload).json()
+            ret_val = requests.put(url, headers=headers, data=payload)
         else:
             raise ValueError("invalid method passed to fetchJson")
 
-        return ret_val
+        if ret_val.status_code == 401:
+            raise AuthenticationError("Invalid credentials")
+
+        if len(ret_val.text) == 0:
+            return {}
+        return ret_val.json()
 
     @staticmethod
-    def generateQueryUrl(url, queries=None):
+    def generate_query_url(url, queries=None):
         """
         Return a URL encoding of the supplied
         """
-        if (queries):
+        if queries is not None:
             url += "?where=" + requests.utils.quote(json.dumps(queries))
         return url
 
@@ -101,59 +112,68 @@ class RestApi(Api):
         # if the dictionary has not been registered, register it
         if self._endpoints is None:
             self._endpoints = {
-                "signup": lambda data: self._fetchJson("/users", {"method": "post", "body": data}),
+                "signup": lambda data: self._fetch_json("/users", {"method": "post", "body": data}),
 
-                "login": lambda data: self._updateToken(self._fetchJson("/login", {"method": "post", "body": data})),
+                "login": lambda data: self._update_token(self._fetch_json("/login", {"method": "post", "body": data})),
                 # TODO: implement - also, don't hurt me for temporary exec
                 "loginMaster": lambda data: exec('raise NotImplementedError("loginMaster unimplemented")'),
 
-                "logout": lambda data=None: self._fetchJson("/logout", {"method": "post"}),
+                "logout": lambda data=None: self._fetch_json("/logout", {"method": "post"}),
 
-                "fetchUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method": "get"}),
+                "fetchUser": lambda data: self._fetch_json("/users/{}".format(data["userId"]), {"method": "get"}),
 
-                "findUsers": lambda data: self._fetchJson(RestApi.generateQueryUrl("/users", data["constraints"]),
-                                                          {"method": "get"}),
+                "findUsers": lambda data: self._fetch_json(RestApi.generate_query_url("/users", data["constraints"]),
+                                                           {"method": "get"}),
 
-                "deleteUser": lambda data: self._fetchJson("/users/{}".format(data["userId"]), {"method": "delete"}),
+                "deleteUser": lambda data: self._fetch_json("/users/{}".format(data["userId"]), {"method": "delete"}),
 
-                "findDeviceSchemas": lambda data: self._fetchJson(
-                    RestApi.generateQueryUrl("/schemas", data["constraints"]), {"method": "get"}),
+                "findDeviceSchemas": lambda data: self._fetch_json(
+                    RestApi.generate_query_url("/schemas", data["constraints"]), {"method": "get"}),
 
-                "addDeviceSchema": lambda data: self._fetchJson("/schemas", {"method": "post", "body": data}),
+                "addDeviceSchema": lambda data: self._fetch_json("/schemas", {"method": "post", "body": data}),
 
-                "fetchDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]),
-                                                                  {"method": "get"}),
+                "fetchDeviceSchema": lambda data: self._fetch_json("/schemas/{}".format(data["schemaId"]),
+                                                                   {"method": "get"}),
 
-                "updateDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data.pop("schemaId")),
-                                                                   {"method": "put", "body": data}),
+                "updateDeviceSchema": lambda data: self._fetch_json("/schemas/{}".format(data.pop("schemaId")),
+                                                                    {"method": "put", "body": data}),
 
-                "deleteDeviceSchema": lambda data: self._fetchJson("/schemas/{}".format(data["schemaId"]),
-                                                                   {"method": "delete"}),
+                "deleteDeviceSchema": lambda data: self._fetch_json("/schemas/{}".format(data["schemaId"]),
+                                                                    {"method": "delete"}),
 
-                "findDevices": lambda data: self._fetchJson(RestApi.generateQueryUrl("/devices", data["constraints"]),
-                                                            {"method": "get"}),
+                "findDevices": lambda data: self._fetch_json(
+                    RestApi.generate_query_url("/devices", data["constraints"]),
+                    {"method": "get"}),
 
-                "addDevice": lambda data: self._fetchJson("/devices", {"method": "post", "body": data}),
+                "addDevice": lambda data: self._fetch_json("/devices", {"method": "post", "body": data}),
 
-                "fetchDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]), {"method": "get"}),
+                "fetchDevice": lambda data: self._fetch_json("/devices/{}".format(data["deviceId"]), {"method": "get"}),
 
-                "updateDevice": lambda data: self._fetchJson("/devices/{}".format(data.pop("deviceId")),
-                                                             {"method": "put", "body": data}),
+                "updateDevice": lambda data: self._fetch_json("/devices/{}".format(data.pop("deviceId")),
+                                                              {"method": "put", "body": data}),
 
-                "deleteDevice": lambda data: self._fetchJson("/devices/{}".format(data["deviceId"]),
-                                                             {"method": "delete"}),
+                "deleteDevice": lambda data: self._fetch_json("/devices/{}".format(data["deviceId"]),
+                                                              {"method": "delete"}),
 
-                "fetchHistory": lambda data: self._fetchJson("/history/{}".format(data["deviceId"]), {"method": 'get'}),
+                "fetchHistory": lambda data: self._fetch_json("/history/{}".format(data["deviceId"]),
+                                                              {"method": 'get'}),
 
-                "getServerTime": lambda data=None: self._fetchJson("/time", {"method": "get"})
+                "getServerTime": lambda data=None: self._fetch_json("/time", {"method": "get"})
             }
 
         return self._endpoints
 
-    def _updateToken(self, data):
+    def _update_token(self, data):
         """
         Simply updates self.token to the data.token
         """
+        if 'status' in data and data['status'] == 'error':
+            raise AuthenticationError(data['data'])
+        elif 'results' in data:
+            raise ProjectError(data)
+        elif 'token' not in data:
+            raise ValueError("Token missing from data response", data)
+
         self._token = data["token"]
         return data
 

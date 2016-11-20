@@ -1,3 +1,5 @@
+from .exception import AuthenticationError
+
 class User(object):
     def __init__(self, api, data):
         self._api = api
@@ -15,6 +17,7 @@ class User(object):
         elif type(data) is str:
             self._data = {'id': data}
 
+    @property
     def id(self):
         return self._data['id']
 
@@ -64,6 +67,9 @@ class User(object):
 
     def fetch(self):
         data = self._api.request('fetchUser', {'userId': self.id})
+
+        if 'status' in data and data['status'] == 'error':
+            raise AuthenticationError("Fetch user requires masterkey", data['data'])
 
         self._data = data
         self._fetched = True

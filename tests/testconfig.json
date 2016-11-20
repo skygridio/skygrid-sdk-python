@@ -1,29 +1,75 @@
 {
-	"_comment" : "this is a set of projects/schemas/items that will be tested throughout the testing field",
-	"projects" : [
-		{
-			"project1": {
-				"id" : "oCjf42d8",
-				"users" : [
-					{"email": "skygridtest@gmail.com", "password": "hacktheworld"}
-				],
-				"schemas" : [
-					{
-						"id": "hyUWjvpZ",
-						"name": "ExpectedName",
-						"fields": {
-							"PropertyA" : 
-						}
-					}
-				],
-				"devices" : [
-					{
-						"id": "UH1Bk-7V",
-						"schema": "hyUWjvpZ",
-
-					}
-				]
-			}
-		}
-	]
+  "_comment": "this is a set of projects/schemas/items that will be tested throughout the testing field",
+  "projects": {
+    "project1": {
+      "id": "oCjf42d8",
+      "users": [
+        {
+          "email": "skygridtest@gmail.com",
+          "password": "hacktheworld",
+          "id": "cLFY--y2"
+        },
+        {
+          "email": "sgtest2@gmail.com",
+          "password": "hacktheworld",
+          "id": "0dmm4Pmd"
+        }
+      ],
+      "schemas": [
+        {
+          "id": "hyUWjvpZ",
+          "name": "ExpectedName",
+          "fields": [
+            "PropertyA",
+            "PropertyB",
+            "PropertyC"
+          ],
+          "PropertyA": "string",
+          "PropertyB": "number",
+          "PropertyC": "boolean"
+        }
+      ],
+      "devices": [
+        {
+          "id": "UH1Bk-7V",
+          "name": "DeviceNameTest",
+          "schema": "hyUWjvpZ"
+        }
+      ]
+    },
+    "project2": {
+      "id": "oEXumKza",
+      "users": [
+        {
+          "id": "rBxWHZ0f",
+          "email": "skygridtest@gmail.com",
+          "password": "hacktheworld2"
+        }
+      ],
+      "schemas": [
+        {
+          "id": "KbE9gume",
+          "name": "Test3",
+          "fields": [
+            "None"
+          ],
+          "None": "string"
+        }
+      ]
+    },
+    "project3": {
+      "id": "0fWf0IAE",
+      "_comment": "this project is simply for creating and deleting users",
+      "users": [
+        {
+          "email": "mutt@mail.com",
+          "password": "hacktheworld3"
+        }
+      ]
+    },
+    "project4": {
+      "id": "UcOHeRUb",
+      "_comment": "project that should not have any users"
+    }
+  }
 }
