@@ -7,6 +7,6 @@ from skygrid.project import Project
 from skygrid.schema import Schema
 from skygrid.subscription_manager import SubscriptionManager
 from skygrid.user import User
-from skygrid.exception import AuthenticationError, ProjectError
+from skygrid.exception import AuthenticationError, SkygridException
 
 #API_BASE = 'localhost'

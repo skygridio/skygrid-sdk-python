@@ -1,4 +1,5 @@
-from .exception import AuthenticationError
+from .exception import AuthenticationError, SkygridException
+
 
 class User(object):
     def __init__(self, api, data):
@@ -66,10 +67,13 @@ class User(object):
         return self
 
     def fetch(self):
-        data = self._api.request('fetchUser', {'userId': self.id})
+        data, status_code = self._api.request('fetchUser', {'id': self.id})
 
         if 'status' in data and data['status'] == 'error':
-            raise AuthenticationError("Fetch user requires masterkey", data['data'])
+            if status_code == 401:
+                raise AuthenticationError("Fetch user requires masterkey", data['data'])
+            elif status_code == 400:
+                raise SkygridException("Bad format/non-existent user", data['data'])
 
         self._data = data
         self._fetched = True

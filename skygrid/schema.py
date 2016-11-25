@@ -1,6 +1,6 @@
 # from .acl import Acl
 from .util import *
-
+from .exception import SkygridException, AuthenticationError
 
 class Schema(object):
     def __init__(self, api, data=None):
@@ -38,16 +38,17 @@ class Schema(object):
         self._changes['name'] = value
         self._changed = True
 
-    @property
-    def description(self):
-        if 'description' in self._changes:
-            return self._changes['description']
-
-        return self._data['description']
-
-    def set_description(self, value):
-        self._changes['description'] = value
-        self._changed = True
+    # unused??
+    # @property
+    # def description(self):
+    #     if 'description' in self._changes:
+    #         return self._changes['description']
+    #
+    #     return self._data['description']
+    #
+    # def set_description(self, value):
+    #     self._changes['description'] = value
+    #     self._changed = True
 
     # def acl(self):
     #   if (!self._changes.acl) {
@@ -146,7 +147,8 @@ class Schema(object):
             if type(schema) is str:
                 raise Exception(schema)
 
-            merge_fields(self._data, self._changes, ['name', 'description', 'properties'])
+            # merge_fields(self._data, self._changes, ['name', 'description', 'properties'])
+            merge_fields(self._data, self._changes, ['name', 'properties'])
             # merge_acl(self._data, self._changes)
 
             self._changes = {'properties': {}}
@@ -155,7 +157,14 @@ class Schema(object):
         return self
 
     def fetch(self):
-        data = self._api.request('fetchDeviceSchema', {'schemaId': self.id()})
+        data, status_code = self._api.request('fetchDeviceSchema', {'schemaId': self.id})
+
+        if status_code == 400:
+            raise SkygridException("Bad request:", data, "schema:", self.id)
+        elif status_code == 401:
+            raise AuthenticationError("Authentication error:", data, "schema:", self.id)
+        elif 'status' in data and data['status'] == 'error':
+            raise SkygridException("Invalid schema", self.id)
 
         self._data = data
         self._fetched = True

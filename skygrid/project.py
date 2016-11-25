@@ -36,7 +36,7 @@ class Project(object):
 
           api : {None, 'rest', 'websocket'}
             Which type of API interface to use.
-            If None is supplied, defaults to __init__.py->DEFAULT_API.
+            If None is supplied, defaults to DEFAULT_API as specified in __init__.py.
 
           master_key : str, optional
             Associated master key for the specified project, defaults to None.
@@ -142,13 +142,20 @@ class Project(object):
 
         TODO: meta
         """
-        data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
+        arg = {'email': email, 'password': password}
+        if meta:
+            arg['meta'] = meta
+        data, status_code = self._api.request('signup', arg)
+
+        if status_code == 401:
+            raise AuthenticationError('Unable to create new user:', data['data'])
+        elif status_code == 400:
+            raise SkygridException("Bad request:", data['data'])
+
         if 'id' in data:
             return self.user(data['id']).fetch()
         elif type(data) is str:
             raise Exception(data)
-        else:
-            raise AuthenticationError('Unable to create new user:', data['data'])
 
     def user(self, user_id):
         """
@@ -166,7 +173,7 @@ class Project(object):
 
         """
         users = self._api.request('findUsers', {'constraints': constraints, 'fetch': fetch})
-
+        # TODO: replace with list comprehension
         for index, user in enumerate(users):
             users[index] = self.user(user)
 
@@ -177,7 +184,7 @@ class Project(object):
           TODO:
         """
         data = self._api.request('addDeviceSchema', {'name': name})
-
+        #TODO: fix
         if 'id' in data:
             data = self.schema(schema['id']).fetch()
 
@@ -208,7 +215,6 @@ class Project(object):
         _______
         A list of all Schema objects for this project
         """
-
         schemas = self._api.request('findDeviceSchemas', {'constraints': constraints, 'fetch': fetch})
         # we must construct a list of schema objects, which are injected with the schema data we already fetched
         return [Schema(self._api, sc) for sc in schemas]

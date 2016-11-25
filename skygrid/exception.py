@@ -7,5 +7,3 @@ class AuthenticationError(SkygridException):
     pass
 
 
-class ProjectError(SkygridException):
-    pass

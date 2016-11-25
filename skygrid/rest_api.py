@@ -43,23 +43,26 @@ class RestApi(Api):
         _______
         dict
             JSON object representing the response
+        int
+            Status code of the HTTP response
         """
 
         if "method" not in data:
             raise ValueError("Request method not specified")
-
-        ret_val = None
 
         # set up HTTP headers
         headers = data['headers'] if 'headers' in data else {}
         headers['Accept'] = 'application/json'
         headers['Content-Type'] = 'application/json'
 
+        # add the master key to any request once we have it
+        if self._master_key:
+            headers['X-Master-Key'] = self._master_key
+            headers['X-Project-ID'] = self._project_id
+
         if self._token:
             headers['X-Access-Token'] = self._token
         else:
-            if self._master_key:
-                headers['X-Master-Key'] = self._master_key
             headers['X-Project-ID'] = self._project_id
 
         payload = ""
@@ -84,8 +87,9 @@ class RestApi(Api):
             raise ValueError("invalid method passed to fetchJson")
 
         if len(ret_val.text) == 0:
-            return {}
-        return ret_val.json()
+            return {}, ret_val.status_code
+
+        return ret_val.json(), ret_val.status_code
 
     @staticmethod
     def generate_query_url(url, queries=None):
@@ -111,14 +115,13 @@ class RestApi(Api):
             self._endpoints = {
                 "signup": lambda data: self._fetch_json("/users", {"method": "post", "body": data}),
 
-                "login": lambda data: self._update_token(self._fetch_json("/login", {"method": "post", "body": data})),
+                "login": lambda data: self._update_token(*self._fetch_json("/login", {"method": "post", "body": data})),
 
-                # TODO: implement, using the _set_master function
-                "loginMaster": lambda data: exec('raise NotImplementedError("loginMaster unimplemented")'),
+                "loginMaster": lambda data: self._set_master(data),
 
                 "logout": lambda data=None: self._fetch_json("/logout", {"method": "post"}),
 
-                "fetchUser": lambda data: self._fetch_json("/users/{}".format(data["userId"]), {"method": "get"}),
+                "fetchUser": lambda data: self._fetch_json("/users/{}".format(data["id"]), {"method": "get"}),
 
                 "findUsers": lambda data: self._fetch_json(RestApi.generate_query_url("/users", data["constraints"]),
                                                            {"method": "get"}),
@@ -168,36 +171,63 @@ class RestApi(Api):
         Parameters
         __________
         data : str
-            response from _fetch_json
+            required master key
 
-        Returns
-        _______
-        dict
-            response from _fetch_json
         """
-        if 'status' in data and data['status'] == 'error':
-            raise AuthenticationError(data['data'])
-        elif 'results' in data:
-            raise ProjectError(data)
-        elif 'token' not in data:
-            raise ValueError("Master Key missing from data response", data)
+        # if 'status' in data and data['status'] == 'error':
+        #     raise AuthenticationError(data['data'])
+        # elif 'results' in data:
+        #     raise ProjectError(data)
+        # elif 'token' not in data:
+        #     raise ValueError("Master Key missing from data response", data)
 
-        self._master_key = data["token"]
-        return data
+        self._master_key = data["masterKey"]
 
-    def _update_token(self, data):
+    def _update_token(self, data, status_code):
         """
         Simply updates self.token to the data.token
         """
-        if 'status' in data and data['status'] == 'error':
+
+        if status_code == 401:
             raise AuthenticationError(data['data'])
-        elif 'results' in data:
-            raise ProjectError(data)
+        elif status_code == 400:
+            raise SkygridException(data)
         elif 'token' not in data:
             raise ValueError("Token missing from data response", data)
 
+        # if 'status' in data and data['status'] == 'error':
+        #     raise AuthenticationError(data['data'])
+        # elif 'results' in data:
+        #     # TODO: what is this doing?
+        #     raise Exception("FUCK")
+        #     raise ProjectError(data)
+        # elif 'token' not in data:
+        #     raise ValueError("Token missing from data response", data)
+
         self._token = data["token"]
         return data
+
+    def _delete_user(self, user_id):
+        """
+        Deletes the user, provided we have the master key in this proj
+
+        Parameters
+        __________
+        user_id : str
+            The id of the user we wish to delete
+
+        Returns
+        _______
+        The JSON object returned by the server for this request
+
+        Raises
+        ______
+        AuthorisationException
+            If the master key is not supplied
+        SkygridException
+            If the user_id does not exist
+        """
+        pass
 
     def request(self, name, data=None):
         """
