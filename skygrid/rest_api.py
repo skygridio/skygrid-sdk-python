@@ -174,12 +174,6 @@ class RestApi(Api):
             required master key
 
         """
-        # if 'status' in data and data['status'] == 'error':
-        #     raise AuthenticationError(data['data'])
-        # elif 'results' in data:
-        #     raise ProjectError(data)
-        # elif 'token' not in data:
-        #     raise ValueError("Master Key missing from data response", data)
 
         self._master_key = data["masterKey"]
 
@@ -207,28 +201,6 @@ class RestApi(Api):
         self._token = data["token"]
         return data
 
-    def _delete_user(self, user_id):
-        """
-        Deletes the user, provided we have the master key in this proj
-
-        Parameters
-        __________
-        user_id : str
-            The id of the user we wish to delete
-
-        Returns
-        _______
-        The JSON object returned by the server for this request
-
-        Raises
-        ______
-        AuthorisationException
-            If the master key is not supplied
-        SkygridException
-            If the user_id does not exist
-        """
-        pass
-
     def request(self, name, data=None):
         """
         Request an endpoint procedure to be called.
@@ -245,8 +217,8 @@ class RestApi(Api):
         The JSON object returned by the server for this request
         """
         # attempt to execute the requested endpoint
-        reqFunc = self.endpoints[name]
-        return reqFunc(data)
+        reqfunc = self.endpoints[name]
+        return reqfunc(data)
 
     def close(self):
         """

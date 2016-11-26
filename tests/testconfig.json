@@ -31,7 +31,7 @@
       ],
       "devices": [
         {
-          "id": "UH1Bk-7V",
+          "id": "tsyQHVA9",
           "name": "DeviceNameTest",
           "schema": "hyUWjvpZ"
         }
@@ -62,7 +62,7 @@
       "_comment": "this project is simply for creating and deleting users",
       "users": [
         {
-          "id": "cUpz2tNR",
+          "id": "ZCilE8-j",
           "email": "mutt2@mail.com",
           "password": "kissmygrits"
         }

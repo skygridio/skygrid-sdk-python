@@ -72,7 +72,7 @@ class User(object):
         if 'status' in data and data['status'] == 'error':
             if status_code == 401:
                 raise AuthenticationError("Fetch user requires masterkey", data['data'])
-            elif status_code == 400:
+            elif status_code == 400 or status_code == 404:
                 raise SkygridException("Bad format/non-existent user", data['data'])
 
         self._data = data
@@ -86,8 +86,12 @@ class User(object):
 
         return self
 
-    def remove(self):
-        return self._api.request('deleteUser', {'userId': self.id})
+    def delete(self):
+        res, status_code = self._api.request('deleteUser', {'userId': self.id})
+        if status_code == 401:
+            raise AuthenticationError("Could not delete user, not authorised", res)
+        elif status_code == 400:
+            raise SkygridException("Invalid removal:", res)
 
     def discard_changes(self):
         self._changes = {}

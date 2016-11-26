@@ -11,7 +11,6 @@ config = None
 master_key = None
 with open("../../master_key.txt", 'r') as mk:
     master_key = mk.readline().strip()
-    #print(master_key)
 
 
 def load_config(filename):
@@ -78,6 +77,7 @@ class TestLogoff(unittest.TestCase):
         project.login(usr1["email"], usr1["password"])
         project.logout()
         self.assertIsNone(project._user)
+        self.assertIsNone(project._api._token)
 
     def test_logoffProj1User2(self):
         project = skygrid.Project(config["projects"]["project1"]["id"], api='rest')
@@ -85,6 +85,7 @@ class TestLogoff(unittest.TestCase):
         project.login(usr1["email"], usr1["password"])
         project.logout()
         self.assertIsNone(project._user)
+        self.assertIsNone(project._api._token)
 
     def test_logoffProj2User1(self):
         project = skygrid.Project(config["projects"]["project2"]["id"], api='rest')
@@ -92,13 +93,16 @@ class TestLogoff(unittest.TestCase):
         project.login(usr1["email"], usr1["password"])
         project.logout()
         self.assertIsNone(project._user)
+        self.assertIsNone(project._api._token)
 
     def test_logoffP1_notloggedin(self):
         # should not throw any exceptions - logout
         project = skygrid.Project(config["projects"]["project1"]["id"], api='rest')
         self.assertIsNone(project._user)
+        self.assertIsNone(project._api._token)
         project.logout()
         self.assertIsNone(project._user)
+        self.assertIsNone(project._api._token)
 
 
 class TestSignup(unittest.TestCase):
@@ -167,17 +171,39 @@ class TestSignup(unittest.TestCase):
             return
         self.fail("signup should have failed without master key")
 
+    def test_signup_retval(self):
+        self.fail("implement me")
 
-# TODO: this is now implemented, simply test!
+    def test_signup_retval_priv(self):
+        self.fail("implement me")
+
+
 class TestLoginMaster(unittest.TestCase):
-    def test_broken(self):
-        self.assertTrue(False)
+    def test_login(self):
+        if master_key:
+            project = skygrid.Project(config["projects"]["project3"]["id"], api='rest')
+            project.login_master(master_key)
+            self.assertEqual(project._master_key, master_key)
+
+            # try and access something that a master key can only do
+            x = project.users()
+            self.assertIsNotNone(x)
 
     def test_logout(self):
+        # TODO: haven't quite decided if we should delete master key on logout
         self.fail()
 
     def test_login_incorrect(self):
-        self.fail()
+        if master_key:
+            project = skygrid.Project(config["projects"]["project3"]["id"], api='rest')
+            project.login_master("falsum")
+
+            try:
+                project.users()
+            except skygrid.AuthenticationError:
+                return
+
+            self.fail("Access without a master key did not fail when querying all users")
 
 
 class TestFetchUser(unittest.TestCase):
@@ -246,22 +272,83 @@ class TestFetchUser(unittest.TestCase):
 
 # TODO: not 100% in knowing how the query strings work, also requires master token
 class TestFindUsers(unittest.TestCase):
+
+    def test_query_all(self):
+
+        # fetch all,
+
+        # assert the number is correct, and id's match
+
+        self.fail()
+
     def test_broken(self):
         self.assertTrue(False)
 
 
-# TODO: finish delete usr, also requires master token
 class TestDeleteUser(unittest.TestCase):
     def test_create_delete(self):
 
+        if master_key:
+            # create a user, and make sure we can delete it
+            project = skygrid.Project(config["projects"]["project3"]["id"])
+            project.login_master(master_key)
 
-        self.assertTrue(False)
+            x = project.signup("uniqueuser1989@mail.com", "vespuccibeach3")
+            self.assertIsNotNone(x)
+            x.delete()
 
-    def test_create_delete_priv(self):
-        self.assertTrue(False)
+            with self.assertRaises(skygrid.SkygridException):
+                x.fetch()
+
+        # for these un-authed ones, try and delete pre-existing ones
+        project = skygrid.Project(config["projects"]["project3"]["id"])
+        with self.assertRaises(skygrid.AuthenticationError):
+            x = skygrid.User(project._api, "cUpz2tNR")
+            x.delete()
+
+        project = skygrid.Project(config["projects"]["project3"]["id"])
+        user = config["projects"]["project3"]["users"][0]
+        project.login(user["email"], user["password"])
+        with self.assertRaises(skygrid.AuthenticationError):
+            x = skygrid.User(project._api, "cUpz2tNR")
+            x.delete()
 
     def test_delete_non_existent(self):
-        self.assertTrue(False)
+        if master_key:
+            # delete an invalid id user
+            project = skygrid.Project(config["projects"]["project3"]["id"])
+            project.login_master(master_key)
+
+            x = skygrid.User(project._api, "hello")
+
+            with self.assertRaises(skygrid.SkygridException):
+                x.delete()
+
+        project = skygrid.Project(config["projects"]["project3"]["id"])
+        x = skygrid.User(project._api, "hello")
+
+        with self.assertRaises(skygrid.SkygridException):
+            x.delete()
+
+        project = skygrid.Project(config["projects"]["project3"]["id"])
+        user1 = config["projects"]["project3"]["users"][0]
+        project.login(user1["email"], user1["password"])
+        x = skygrid.User(project._api, "hello")
+
+        with self.assertRaises(skygrid.SkygridException):
+            x.delete()
+
+    def test_create_login_delete(self):
+        if master_key:
+            project = skygrid.Project(config["projects"]["project3"]["id"])
+            project.login_master(master_key)
+
+            x = project.signup("inituser@mail.com", "mailhouse")
+            project.login("inituser@mail.com", "mailhouse")
+            x.delete()
+
+            with self.assertRaises(skygrid.SkygridException):
+                x.fetch()
 
 
 # TODO: not 100% how the queries work
@@ -322,6 +409,7 @@ class TestFetchDevSchema(unittest.TestCase):
 # TODO: update schema, also requires master token
 class TestUpdateSchema(unittest.TestCase):
     def test_update_new(self):
+
         self.assertTrue(False)
 
     def test_update_existing_delete(self):
@@ -343,26 +431,125 @@ class TestFindDevices(unittest.TestCase):
         self.assertTrue(False)
 
 
+class TestRawDeviceCreate(unittest.TestCase):
+    def test_device_fetch_correct_id(self):
+        proc = config["projects"]["project1"]
+        project = skygrid.Project(proc["id"])
+        doc = proc["devices"][0]
+        s_id = doc["schema"]
+        dev = skygrid.Device(project._api, doc["id"]).fetch()
+        schema = None
+        for x in proc["schemas"]:
+            if x["id"] == s_id:
+                schema = x
+                break
+        self.assertIsNotNone(schema, "test broken, please ignore")
+        self.assertEqual(len(dev.properties()), len(schema["fields"]))
+        self.assertIsNotNone(dev)
+
+    def test_device_invalid_id(self):
+
+        proc = config["projects"]["project1"]
+        project = skygrid.Project(proc["id"])
+
+        dev = skygrid.Device(project._api, "inwalid")
+
+        with self.assertRaises(skygrid.SkygridException):
+            dev.fetch()
+
+    def test_device_invalid_proj(self):
+        project = skygrid.Project("invalid project")
+        dev = skygrid.Device(project._api, "invalid")
+
+        with self.assertRaises(skygrid.SkygridException):
+            dev.fetch()
+
+    def test_device_object_emplace(self):
+
+        proc = config["projects"]["project1"]
+        project = skygrid.Project(proc["id"])
+        # TODO: this doesn't change, nor throw an exception
+        # perhaps this is simply because there is nothing queued to push
+        # oh fuck this is because when we send data to skygrid, it doesn't consider the ones
+        # passed in - this can be real confusing, however this complicates constructing from data
+        # if we don't allow passing in values like this.
+        self.fail("device constructor broken - refer to this test")
+        dev = skygrid.Device(project._api, {'id': proc["devices"][0]["id"], \
+                                            'properties': {"PropertyA": "Hi", "PropertyB": 100}})
+        dev.save()
+
+        # self.fail("unimplemented")
+
+    def test_device_object_emplace_incorrect_schema(self):
+        # refer to previous test why this is unimplemented
+        self.fail("unimplemented")
+
+
 # TODO: add device
 class TestAddDevice(unittest.TestCase):
-    def test_add_dev_schema1(self):
-        probj = config["projects"]["project1"]
-        user = config
-        project = skygrid.Project(probj["id"])
 
-        self.assertTrue(False)
+    def test_add_dev_schema1(self):
+        # probj, user, project = setup_project_valid()
+        #
+        # dev = project.add_device("My New Device V2", schema_id=probj["schemas"][0]["id"])
+        #
+        # res = project.device(dev.id)
+        # self.assertIsNotNone(res)
+        # self.assertEqual(res.id, dev.id)
+        # self.assertEqual(res.name, dev.name)
+
+        # self.assertEqual(len(project.devices()), 1)
+        self.fail("unimplemented")
 
     def test_add_dev_nonexist_schema(self):
-        self.assertTrue(False)
+        self.fail("unimplemented")
+        # self.assertTrue(False)
+
+    def test_add_dev_not_logged_in(self):
+        self.fail("unimplemented")
+        # self.fail()
+
+    def test_add_dev_master_key(self):
+        self.fail("unimplemented")
+        # self.fail()
 
 
 # TODO: update device
 class TestUpdateDevice(unittest.TestCase):
     def test_update_existing(self):
-        self.assertTrue(False)
+        self.fail("unimplemented")
+        # probj, user, project = setup_project_valid()
+        #
+        # dev = project.add_device("New device V3.14", schema_id=probj["schemas"][0]["id"])
+        #
+        # res = project.device(dev.id)
+        # self.assertIsNotNone(res)
+        #
+        # # TODO set property test?
+        # dev.set("prop", 123)
+        # self.assertIsNotNone(dev.get("prop"))
+        # self.assertEqual(dev.get("prop"), 123)
+        #
+        # self.save(["prop"])
+        #
+        # dev.set("prop", 321)
+
+        # self.assertTrue(False)
 
     def test_update_nonexist(self):
-        self.assertTrue(False)
+        self.fail("unimplemented")
+        # probj, user, project = setup_project_valid()
+        #
+        # dev = project.add_device("New device V3.14", schema_id=probj["schemas"][0]["id"])
+        #
+        # self.assertIsNotNone(project.devices())
+        #
+        # with self.assertRaises(skygrid.exception.SkygridException):
+        #     dev.get('prop')
+        #
+        # with self.assertRaises(skygrid.exception.SkygridException):
+        #     dev.fetch()
+
 
 
 # TODO: perhaps this /should/ require a masterkey
@@ -377,6 +564,9 @@ class TestDeleteDevice(unittest.TestCase):
 # TODO: fetch hist
 class TestFetchHistory(unittest.TestCase):
     def test_get_history_valid(self):
+
+
+
         self.assertTrue(False)
 
     def test_fetch_history_logging_off(self):
@@ -385,7 +575,23 @@ class TestFetchHistory(unittest.TestCase):
     def test_fetch_history_nonexist_device(self):
         self.assertTrue(False)
 
-# TODO: get server time test
+
+class TestServerTime(unittest.TestCase):
+    def test_get_valid(self):
+        from datetime import datetime
+        # simply should test whether the return type is correct
+        project = skygrid.Project(config["projects"]["project1"]["id"])
+        res = project.get_time()
+        self.assertIsNotNone(res)
+        self.assertIsInstance(res, datetime)
+
+
+def setup_project_valid(proj="project1"):
+    probj = config["projects"][proj]
+    user = probj["users"][0]
+    project = skygrid.Project(probj["id"])
+    project.login(user["email"], user["password"])
+    return probj, user, project
 
 if __name__ == "__main__":
     load_config("testconfig.json")

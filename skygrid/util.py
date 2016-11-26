@@ -15,6 +15,7 @@ def object_empty(obj):
 
 
 def merge_fields(target, source, fields):
+    # TODO: thisn't a deep copy
     for field in fields:
         if field in source:
             source_field = source[field]

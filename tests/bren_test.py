@@ -81,9 +81,9 @@ for device in devices:
 
 print('\nDelete a device...')
 print('Deleting {}'.format(d_id1))
-client.device(d_id1).fetch().remove()
+client.device(d_id1).fetch().delete()
 print('Deleting {}'.format(d_id2))
-client.device(d_id2).fetch().remove()
+client.device(d_id2).fetch().delete()
 
 print('\nFetch all devices...')
 devices = client.devices()

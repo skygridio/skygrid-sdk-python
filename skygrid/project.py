@@ -6,8 +6,10 @@ from .device import Device
 from .schema import Schema
 from .subscription_manager import SubscriptionManager
 from .user import User
+from .util import ISO8601_format
 from .exception import AuthenticationError, SkygridException
 
+from datetime import datetime
 from pyee import EventEmitter
 
 
@@ -119,6 +121,7 @@ class Project(object):
         JSON response after logging in
         TODO: this may be changed.
         """
+        self._master_key = master_key
         return self._api.request('loginMaster', {'masterKey': master_key})
 
     def logout(self):
@@ -126,7 +129,15 @@ class Project(object):
         Logs the current user out, no action if no user currently logged in.
         """
         self._api.request('logout')
+        self._api._token = None
         self._user = None
+
+    def logout_master(self):
+        """
+        Removes the stored master key
+        """
+        self._api._master_key = None
+        self._master_key = None
 
     def signup(self, email, password, meta=None):
         """
@@ -141,13 +152,20 @@ class Project(object):
             Associated password for the newly created client
 
         TODO: meta
+
+        Returns
+        _______
+        user : User()
+            Instance of the newly created user
+
         """
         arg = {'email': email, 'password': password}
         if meta:
             arg['meta'] = meta
         data, status_code = self._api.request('signup', arg)
 
-        if status_code == 401:
+        # TODO: delete the 403 code, it's currently a bug in the node server
+        if status_code == 401 or status_code == 403:
             raise AuthenticationError('Unable to create new user:', data['data'])
         elif status_code == 400:
             raise SkygridException("Bad request:", data['data'])
@@ -156,6 +174,7 @@ class Project(object):
             return self.user(data['id']).fetch()
         elif type(data) is str:
             raise Exception(data)
+
 
     def user(self, user_id):
         """
@@ -170,10 +189,15 @@ class Project(object):
 
     def users(self, constraints={}, fetch=True):
         """
-
+        TODO:
         """
-        users = self._api.request('findUsers', {'constraints': constraints, 'fetch': fetch})
-        # TODO: replace with list comprehension
+        users, status_code = self._api.request('findUsers', {'constraints': constraints, 'fetch': fetch})
+
+        if status_code == 401:
+            raise AuthenticationError("Cannot fetch users, unauthorised:", users)
+        elif status_code == 400:
+            raise SkygridException("Error:", users)
+
         for index, user in enumerate(users):
             users[index] = self.user(user)
 
@@ -186,7 +210,7 @@ class Project(object):
         data = self._api.request('addDeviceSchema', {'name': name})
         #TODO: fix
         if 'id' in data:
-            data = self.schema(schema['id']).fetch()
+            data = self.schema(self.schema['id']).fetch()
 
         elif type(data) is str:
             raise Exception(data)
@@ -224,11 +248,11 @@ class Project(object):
           TODO:
         """
         if schema_id is not None:
-            device = self._api.request('addDevice', {'name': name, 'schemaId': schema_id})
+            device, status_code = self._api.request('addDevice', {'name': name, 'schemaId': schema_id})
             return self.device(device['id']).fetch()
 
         elif schema is not None:
-            device = self._api.request('addDevice', {'name': name, 'schemaId': schema.id()})
+            device, status_code = self._api.request('addDevice', {'name': name, 'schemaId': schema.id})
             return self.device(device['id']).fetch()
 
         else:
@@ -277,6 +301,18 @@ class Project(object):
         self._project_id = None
         self._master_key = None
         self._user = None
+
+    def get_time(self):
+        """
+        Get the server's current time (UTC)
+
+        Returns
+        -------
+        time : datetime
+            datetime object representing the current time
+
+        """
+        return datetime.strptime(self._api.request('getServerTime')[0], ISO8601_format)
 
     def _setup_listeners(self):
         """
