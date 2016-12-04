@@ -484,34 +484,150 @@ class TestRawDeviceCreate(unittest.TestCase):
         # refer to previous test why this is unimplemented
         self.fail("unimplemented")
 
+class TestDeviceFunctions(unittest.TestCase):
+    def test_constructor1(self):
+        # construct with id
+
+        # fetch
+
+        # assert contained data is correct
+        self.fail("unimplemented")
+
+    def test_constructor2(self):
+        # construct with object
+
+        # save/fetch
+
+        # assert contained data is correct
+        self.fail("unimplemented")
+
+    def test_id(self):
+
+        # construct with id, fetch
+
+        # assert that the id is intact
+
+        self.fail("unimplemented")
+
+    def test_completeness(self):
+
+        # construct with id, don't fetch,
+
+        # assert not complete
+
+        # fetch
+
+        # assert complete
+
+        self.fail("unimplemented")
+
+    def test_dirty(self):
+
+        # construct with id, fetch
+
+        # assert not dirty
+
+        # make a change
+
+        # assert dirty
+
+        # discard changes
+
+        # assert not dirty
+
+        # make name change
+
+        # assert dirty
+
+        self.fail("unimplemented")
+
+    def test_log(self):
+
+        # check whether the log is on for a device with logging on
+
+        # setting it off
+
+        # check that log is on
+
+        # discard the changes
+
+        # set it off
+
+        # save it
+
+        # fetch
+
+        # check log is off
+
+        # set it back on and save
+
+        # assert that it is on
+
+        self.fail("unimplemented")
+
+    def test_name(self):
+
+        # initialise device by id
+
+        # assert name is off
+
+        # fetch
+
+        # assert name is correct
+
+        # set name to be the same name
+
+        # save
+
+        self.fail("unimplemented")
+
+    def test_schema(self):
+        self.fail("unimplemented")
+
+    def test_properties(self):
+        self.fail("unimplemented")
+
+    def test_property_check(self):
+        self.fail("unimplemented")
+
+    def test_saving(self):
+        self.fail("unimplemented")
+
+    def test_fetch(self):
+        #also test fetch_if_needed
+        self.fail("unimplemented")
+
+    def test_history(self):
+        self.fail("unimplemented")
+
+    def test_delete(self):
+        self.fail("unimplemented")
+
+    def test_discard_changes(self):
+        self.fail("unimplemented")
+
 
 # TODO: add device
 class TestAddDevice(unittest.TestCase):
-
     def test_add_dev_schema1(self):
-        # probj, user, project = setup_project_valid()
-        #
-        # dev = project.add_device("My New Device V2", schema_id=probj["schemas"][0]["id"])
-        #
-        # res = project.device(dev.id)
-        # self.assertIsNotNone(res)
-        # self.assertEqual(res.id, dev.id)
-        # self.assertEqual(res.name, dev.name)
+        probj, user, project = setup_project_valid()
 
-        # self.assertEqual(len(project.devices()), 1)
-        self.fail("unimplemented")
+        dev = project.add_device("My New Device V2", schema_id=probj["schemas"][0]["id"])
+        self.assertIsNotNone(dev)
+        self.assertEqual(dev['name'], "My New Device V2")
+
+        # TODO: assert the fields match the schema
+
+        dev.delete()
 
     def test_add_dev_nonexist_schema(self):
         self.fail("unimplemented")
-        # self.assertTrue(False)
 
     def test_add_dev_not_logged_in(self):
         self.fail("unimplemented")
-        # self.fail()
 
     def test_add_dev_master_key(self):
         self.fail("unimplemented")
-        # self.fail()
 
 
 # TODO: update device

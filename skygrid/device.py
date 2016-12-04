@@ -54,6 +54,29 @@ class Device(object):
     def is_dirty(self):
         return self._changed
 
+    @property
+    def log(self):
+        if 'log' in self._changes:
+            return self._changes['log']
+        return self._data['log']
+
+    @log.setter
+    def log(self, value):
+        self._changes['log'] = value
+        self._changed = True
+
+    @property
+    def name(self):
+        if 'name' in self._changes:
+            return self._changes['name']
+        return self._data['name']
+
+    @name.setter
+    def name(self, value):
+        self._changes['name'] = value
+        self._changed = True
+
+    @property
     def schema_id(self):
         return self._data['schemaId']
 
