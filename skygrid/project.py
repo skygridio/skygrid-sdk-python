@@ -1,32 +1,26 @@
-from skygrid import API_BASE, SOCKETIO_BASE, DEFAULT_API
-
 from .socket_api import SocketApi
 from .device import Device
 from .schema import Schema
 from .subscription_manager import SubscriptionManager
 from .user import User
-
+import os
 from pyee import EventEmitter
 
+API_URL = os.environ.get('SKYGRID_SERVER_ADDRESS', 'https://api.skygrid.io')
+SOCKETIO_URL = os.environ.get('SKYGRID_SOCKETIO_ADDRESS', 'https://api.skygrid.io:81')
 
 class Project(object):
 
   _emitter = EventEmitter()
   _self = None
 
-  def __init__(self, project_id, address=None, api=None, master_key=None):
+  def __init__(self, project_id, address=SOCKETIO_URL, api='websocket', master_key=None):
     _self = self
 
-    if api == None:
-      api = DEFAULT_API
-
-
     if api is 'websocket':
-      if address == None:
-        address = SOCKETIO_BASE
       self._api = SocketApi(address, project_id, self._emitter)
 
-    elif address is 'rest':
+    elif api is 'rest':
       raise Exception('Rest api not supported')
 
     else:
