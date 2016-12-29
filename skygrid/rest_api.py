@@ -8,7 +8,11 @@ class RestApi(object):
     self._master_key = None
 
     self._endPoints = {
-      'getServerTime': get_server_time
+      'getServerTime': get_server_time,
+      'login':login,
+      'logout':logout,
+      'loginMaster':login_master,
+      'signup':signup
     }
 
   def _fetchJson(self,url,params):
@@ -26,7 +30,7 @@ class RestApi(object):
 
     fullUrl = self._address + url
     r = request(
-      params.get('method','GET').upper(),
+      params.get('method','').upper(),
       fullUrl,
       headers=params.get('headers',{}),
       data=params.get('body',{}))
@@ -41,9 +45,36 @@ class RestApi(object):
       raise Exception('API end point {} does not exist on the REST API'.format(name))
 
     return self._endPoints[name](self,data)
-
+    
+# endpoints
 def get_server_time(self,data):
   return self._fetchJson('/time', {'method':'get'})
+
+def signup(self,data):
+  return self._fetchJson('/users',{
+    'method':'post',
+    'body':data
+  })
+  
+def login(self,data):
+  response = self._fetchJson('/login',{
+    'method':'post',
+    'body':data
+  })
+  self._token = response.json().get('token',None)
+  return response
+
+def logout(self,data):
+  return self._fetchJson('/logout',{'method':'post'})
+
+def login_master(self,data):
+  self._master_key = data.get('masterKey','')
+  return {
+    # HACK: to not cause an error in parseJSON
+    'status_code':204
+  }
+
+# end endpoints
 
 def parseJSON(r):
   if(r.status_code != 204):
