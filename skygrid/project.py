@@ -1,4 +1,4 @@
-from skygrid import API_BASE, DEFAULT_API
+from skygrid import API_BASE, SOCKETIO_BASE, DEFAULT_API
 
 from .socket_api import SocketApi
 from .device import Device
@@ -20,10 +20,10 @@ class Project(object):
     if api == None:
       api = DEFAULT_API
 
-    if address == None:
-      address = API_BASE
 
     if api is 'websocket':
+      if address == None:
+        address = SOCKETIO_BASE
       self._api = SocketApi(address, project_id, self._emitter)
 
     elif address is 'rest':
@@ -53,8 +53,8 @@ class Project(object):
 
     else:
       raise Exception('Unable to log in')
-    
-  
+
+
   def login_master(self, master_key):
     return self._api.request('loginMaster', { 'masterKey': master_key})
 
@@ -69,10 +69,10 @@ class Project(object):
 
     if 'id' in data:
       return self.user(data['id']).fetch()
-    
+
     elif type(data) is str:
       raise Exception(data)
-    
+
     else:
       raise Exception('Unable to create new user')
 
@@ -95,17 +95,17 @@ class Project(object):
 
     if 'id' in data:
       data = self.schema(schema['id']).fetch()
-    
+
     elif type(data) is str:
       raise Exception(data)
-    
+
     else:
       raise Exception('Unable to create new schema')
 
 
   def schema(self, schema_id):
     return Schema(self._api, schema_id)
-  
+
 
   def schemas(self, constraints={}, fetch=True):
     schemas = self._api.request('findDeviceSchemas', {'constraints': constraints, 'fetch': fetch})
@@ -156,7 +156,7 @@ class Project(object):
   def close(self):
     self.remove_subscriptions()
     self._api.close()
-    
+
     self._projectId = None
     self._masterKey = None
     self._user = None
