@@ -61,7 +61,7 @@ class Project(object):
     self._user = None
 
 
-  def signup(self, email, password, meta=None):
+  def signup(self, email, password, meta={}):
     data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
 
     if 'id' in data:
