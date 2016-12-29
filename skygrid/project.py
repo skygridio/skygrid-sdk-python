@@ -1,4 +1,5 @@
 from .socket_api import SocketApi
+from .rest_api import RestApi
 from .device import Device
 from .schema import Schema
 from .subscription_manager import SubscriptionManager
@@ -17,11 +18,11 @@ class Project(object):
   def __init__(self, project_id, address=SOCKETIO_URL, api='websocket', master_key=None):
     _self = self
 
-    if api is 'websocket':
+    if api is 'socketio':
       self._api = SocketApi(address, project_id, self._emitter)
 
     elif api is 'rest':
-      raise Exception('Rest api not supported')
+      self._api = RestApi(address, project_id)
 
     else:
       raise Exception('Unknown api type')
@@ -33,6 +34,8 @@ class Project(object):
 
     self._setup_listeners()
 
+  def fetchServerTime(self):
+    return self._api.request('getServerTime')
 
   def login(self, email, password):
     data = self._api.request('login', {'email': email, 'password': password})

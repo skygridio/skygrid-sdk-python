@@ -5,6 +5,7 @@ def fn(changes,device):
     print(i,device.get(i))
   print("~~end of {} entry~~".format(device.name()))
 
-pr = skygrid.Project('RHlD5jC0',address="http://localhost:3081")
-pr.login_master('tMX1b94v+Qmr8/r5RH66Bkjk')
-print(pr.users())
+pr = skygrid.Project('RHlD5jC0',address="http://localhost:3081",api='socketio')
+print(pr.fetchServerTime())
+pr = skygrid.Project('RHlD5jC0',address="http://localhost:3080",api='rest')
+print(pr.fetchServerTime())
