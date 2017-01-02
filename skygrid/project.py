@@ -65,7 +65,7 @@ class Project(object):
     data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
 
     if 'id' in data:
-      return self.user(data['id']).fetch()
+      return data['id']
 
     elif type(data) is str:
       raise Exception(data)

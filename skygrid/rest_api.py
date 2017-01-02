@@ -1,4 +1,5 @@
 from requests import request
+import json
 
 class RestApi(object):
   def __init__(self,address,project_id):
@@ -33,7 +34,7 @@ class RestApi(object):
       params.get('method','').upper(),
       fullUrl,
       headers=params.get('headers',{}),
-      data=params.get('body',{}))
+      data=json.dumps(params.get('body',"")))
     r.raise_for_status()
     return parseJSON(r)
 
