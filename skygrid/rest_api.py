@@ -1,5 +1,6 @@
 from requests import request
 import json
+import urllib
 
 class RestApi(object):
   def __init__(self,address,project_id):
@@ -13,7 +14,9 @@ class RestApi(object):
       'login':login,
       'logout':logout,
       'loginMaster':login_master,
-      'signup':signup
+      'signup':signup,
+      'fetchUser':fetch_user,
+      'findUsers':find_users
     }
 
   def _fetchJson(self,url,params):
@@ -30,11 +33,15 @@ class RestApi(object):
       params['headers']['X-Project-ID'] = self._project_id
 
     fullUrl = self._address + url
+    data = ''
+    if 'body' in params:
+      data = json.dumps(params['body'])
+      
     r = request(
       params.get('method','').upper(),
       fullUrl,
       headers=params.get('headers',{}),
-      data=json.dumps(params.get('body',"")))
+      data=data)
     r.raise_for_status()
     return parseJSON(r)
 
@@ -75,9 +82,24 @@ def login_master(self,data):
     'status_code':204
   }
 
+def fetch_user(self,data):
+  return self._fetchJson('/users/{}'.format(data['userId']),{'method':'get'})
+
+def find_users(self,data):
+  return self._fetchJson(
+    generateQueryUrl('/users',data.get('constraints',{})),
+    {'method':'get'}
+  )
+
 # end endpoints
 
 def parseJSON(r):
   if(r.status_code != 204):
     return r.json()
   return {}
+  
+def generateQueryUrl(url, queries):
+	if (queries):
+    #http://stackoverflow.com/questions/946170/equivalent-javascript-functions-for-pythons-urllib-quote-and-urllib-unquote
+		url += '?where=' + urllib.quote(json.dumps(queries), safe='~()*!.\'');
+	return url
