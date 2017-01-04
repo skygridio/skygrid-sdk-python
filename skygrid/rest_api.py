@@ -16,7 +16,23 @@ class RestApi(object):
       'loginMaster':login_master,
       'signup':signup,
       'fetchUser':fetch_user,
-      'findUsers':find_users
+      'findUsers':find_users,
+      'deleteUser':delete_user,
+      'requestPasswordReset':request_password_reset,
+      'resetPassword':reset_password,
+      'fetchProject':fetch_project,
+      'updateProject':update_project,
+      'addDeviceSchema':add_device_schema,
+      'findDeviceSchemas':find_device_schemas,
+      'fetchDeviceSchema':fetch_device_schema,
+      'updateDeviceSchema':update_device_schema,
+      'deleteDeviceSchema':delete_device_schema,
+      'findDevices':find_devices,
+      'addDevice':add_device,
+      'fetchDevice':fetch_device,
+      'updateDevice':update_device,
+      'deleteDevice':delete_device,
+      'fetchHistory':fetch_history
     }
 
   def _fetchJson(self,url,params):
@@ -91,6 +107,105 @@ def find_users(self,data):
     {'method':'get'}
   )
 
+def delete_user(self,data):
+  return self._fetchJson(
+    '/users/{}'.format(data['userId']),
+    { 'method' : 'delete'}
+  )
+  
+def request_password_reset(self,data):
+  return self._fetchJson(
+    '/users/requestPasswordReset',
+    { 'method' : 'post', 'body' : data}
+  )
+  
+def reset_password(self,data):
+  return self._fetchJson(
+    '/users/resetPassword',
+    { 'method' : 'post', 'body' : data}
+  )
+  
+def fetch_project(self,data):
+  return self._fetchJson(
+    '/projects/{}'.format(data['projectId']),
+    { 'method' : 'get'}
+  )
+
+def update_project(self,data):
+  return self._fetchJson(
+    '/projects/{}'.format(data['projectId']),
+    { 'method' : 'put', 'body' : data}
+  )
+
+def add_device_schema(self,data):
+  return self._fetchJson(
+    '/schemas',
+    { 'method' : 'post', 'body' : data}
+  )
+  
+def find_device_schemas(self,data):
+  return self._fetchJson(
+    generateQueryUrl('/schemas',data.get('constraints',{})),
+    { 'method' : 'get'}
+  )
+  
+def fetch_device_schema(self,data):
+  return self._fetchJson(
+    '/schemas/{}'.format(data['schemaId']),
+    { 'method' : 'get'}
+  )
+
+def update_device_schema(self,data):
+  schemaId = data['schemaId']
+  data.pop('schemaId')
+  return self._fetchJson(
+    '/schemas/{}'.format(schemaId),
+    { 'method' : 'put', 'body': data}
+  )
+
+def delete_device_schema(self,data):
+  return self._fetchJson(
+    '/schemas/{}'.format(data['schemaId']),
+    { 'method' : 'delete' }
+  )
+
+def find_devices(self,data):
+  return self._fetchJson(
+    generateQueryUrl('/devices',data.get('constraints',{})),
+    { 'method' : 'get' }
+  )
+  
+def add_device(self,data):
+  return self._fetchJson(
+    '/devices',
+    { 'method' : 'post', 'body' : data }
+  )
+
+def fetch_device(self,data):
+  return self._fetchJson(
+    '/devices/{}'.format(data['deviceId']),
+    { 'method' : 'get' }
+  )
+
+def update_device(self,data):
+  deviceId = data['deviceId']
+  data.pop('deviceId')
+  return self._fetchJson(
+    '/devices/{}'.format(deviceId),
+    { 'method' : 'put', 'body' : data}
+  )
+
+def delete_device(self,data):
+  return self._fetchJson(
+    '/devices/{}'.format(data['deviceId']),
+    { 'method' : 'delete' }
+  )
+
+def fetch_history(self,data):
+  return self._fetchJson(
+    '/history/{}'.format(data['deviceId']),
+    { 'method' : 'get' }
+  )
 # end endpoints
 
 def parseJSON(r):
