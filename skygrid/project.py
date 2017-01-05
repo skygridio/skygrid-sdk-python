@@ -87,11 +87,11 @@ class Project(object):
     return users
 
 
-  def add_schema(self, name):
-    data = self._api.request('addDeviceSchema', {'name': name})
+  def add_schema(self, name, properties={}):
+    data = self._api.request('addDeviceSchema', {'name': name, 'properties':properties})
 
     if 'id' in data:
-      data = self.schema(schema['id']).fetch()
+      data = self.schema(data['id']).fetch()
 
     elif type(data) is str:
       raise Exception(data)
