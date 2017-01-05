@@ -9,7 +9,7 @@ def fn(changes,device):
 pr = skygrid.Project('RHlD5jC0',address="http://localhost:3080",api='rest') 
 try:
   pr.login_master('tMX1b94v+Qmr8/r5RH66Bkjk')
-  print(pr.add_schema('testing1'))  
+  print(pr.devices())
 except requests.exceptions.HTTPError as err:
   print(err)
   print("~~~~ Response ~~~~")

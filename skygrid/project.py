@@ -91,13 +91,14 @@ class Project(object):
     data = self._api.request('addDeviceSchema', {'name': name, 'properties':properties})
 
     if 'id' in data:
-      data = self.schema(data['id']).fetch()
+      return self.schema(data['id']).fetch()
 
     elif type(data) is str:
       raise Exception(data)
 
     else:
       raise Exception('Unable to create new schema')
+  
 
 
   def schema(self, schema_id):
