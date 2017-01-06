@@ -1,33 +1,28 @@
-from skygrid import API_BASE, SOCKETIO_BASE, DEFAULT_API
-
 from .socket_api import SocketApi
+from .rest_api import RestApi
 from .device import Device
 from .schema import Schema
 from .subscription_manager import SubscriptionManager
 from .user import User
-
+import os
 from pyee import EventEmitter
 
+API_URL = os.environ.get('SKYGRID_SERVER_ADDRESS', 'https://api.skygrid.io')
+SOCKETIO_URL = os.environ.get('SKYGRID_SOCKETIO_ADDRESS', 'https://api.skygrid.io:81')
 
 class Project(object):
 
   _emitter = EventEmitter()
   _self = None
 
-  def __init__(self, project_id, address=None, api=None, master_key=None):
+  def __init__(self, project_id, address=SOCKETIO_URL, api='websocket', master_key=None):
     _self = self
 
-    if api == None:
-      api = DEFAULT_API
-
-
-    if api is 'websocket':
-      if address == None:
-        address = SOCKETIO_BASE
+    if api is 'socketio':
       self._api = SocketApi(address, project_id, self._emitter)
 
-    elif address is 'rest':
-      raise Exception('Rest api not supported')
+    elif api is 'rest':
+      self._api = RestApi(address, project_id)
 
     else:
       raise Exception('Unknown api type')
@@ -39,6 +34,8 @@ class Project(object):
 
     self._setup_listeners()
 
+  def fetchServerTime(self):
+    return self._api.request('getServerTime')
 
   def login(self, email, password):
     data = self._api.request('login', {'email': email, 'password': password})
@@ -64,11 +61,11 @@ class Project(object):
     self._user = None
 
 
-  def signup(self, email, password, meta=None):
+  def signup(self, email, password, meta={}):
     data = self._api.request('signup', {'email': email, 'password': password, 'meta': meta})
 
     if 'id' in data:
-      return self.user(data['id']).fetch()
+      return data['id']
 
     elif type(data) is str:
       raise Exception(data)
@@ -90,17 +87,18 @@ class Project(object):
     return users
 
 
-  def add_schema(self, name):
-    data = self._api.request('addDeviceSchema', {'name': name})
+  def add_schema(self, name, properties={}):
+    data = self._api.request('addDeviceSchema', {'name': name, 'properties':properties})
 
     if 'id' in data:
-      data = self.schema(schema['id']).fetch()
+      return self.schema(data['id']).fetch()
 
     elif type(data) is str:
       raise Exception(data)
 
     else:
       raise Exception('Unable to create new schema')
+  
 
 
   def schema(self, schema_id):

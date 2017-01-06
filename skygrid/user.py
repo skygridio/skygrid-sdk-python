@@ -72,8 +72,7 @@ class User(object):
       
 
   def fetch(self):
-    data = self._api.request('fetchUser', {'userId': self.id})
-
+    data = self._api.request('fetchUser', {'userId': self.id()})
     self._data = data
     self._fetched = True
 
